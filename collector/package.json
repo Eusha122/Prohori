@@ -1,0 +1,16 @@
+{
+  "name": "prohori-collector",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Polite, resumable collectors for public e-GP (eprocure.gov.bd) award notices and the debarment list.",
+  "main": "collect_noa.js",
+  "scripts": {
+    "setup": "playwright install chromium",
+    "collect": "node collect_noa.js --delay-ms 1200",
+    "debarment": "node collect_debarment.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.49.1"
+  }
+}

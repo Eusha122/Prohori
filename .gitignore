@@ -1,0 +1,40 @@
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+
+# --- Data (large, re-creatable with collector/ + pipeline/) ---
+data/*
+!data/README.md
+*.duckdb
+*.duckdb.wal
+
+# --- Secrets / local config ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Logs and scratch ---
+*.log
+tmp/
+scratch/
+
+# --- Personal working notes (not for the public repo) ---
+CONTEXT.md
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
