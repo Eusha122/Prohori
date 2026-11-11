@@ -1,0 +1,267 @@
+{
+ "made": "2026-11-11",
+ "thresholds": {
+  "dominance_min_awards": 30,
+  "dominance_share": 0.4,
+  "short_window_days": 7,
+  "concentration_top": "5% of suppliers"
+ },
+ "datasets": [
+  {
+   "id": "bd",
+   "country": "Bangladesh",
+   "country_bn": "বাংলাদেশ",
+   "source": "Bangladesh e-GP award notices (Prohori's OCDS export)",
+   "url": "https://www.eprocure.gov.bd",
+   "note": "Tenders-received counts exist only for the ~28,000 contracts whose detail pages Prohori read (not a random sample).",
+   "releases": 892574,
+   "tenders": 892531,
+   "awards_with_supplier": 892574,
+   "buyers": 10252,
+   "period": [
+    "2011-12-26",
+    "2026-11-04"
+   ],
+   "checks": {
+    "dominance": {
+     "available": true,
+     "buyers_checked": 3673,
+     "flagged": 97,
+     "share": 0.0264,
+     "examples": [
+      {
+       "buyer": "Singra Upazila Health Complex , Natore",
+       "supplier": "M/S. Ashik Enterprise",
+       "share": 0.882,
+       "won": 30,
+       "awards": 34
+      },
+      {
+       "buyer": "Executive Engineer(Operation), Chandpur 150MW CCPP",
+       "supplier": "M/S Sharif & Brothers",
+       "share": 0.838,
+       "won": 31,
+       "awards": 37
+      },
+      {
+       "buyer": "Office of the Principal, Meherpur Technical School & College",
+       "supplier": "M/S Dhaka Metal & Machinarise Store",
+       "share": 0.8,
+       "won": 48,
+       "awards": 60
+      },
+      {
+       "buyer": "Upazila Parishad, Godagari, Rajshahi",
+       "supplier": "m/s.soniaenterprise",
+       "share": 0.767,
+       "won": 33,
+       "awards": 43
+      },
+      {
+       "buyer": "Mongla Upazila Health Complex",
+       "supplier": "lucky Medicine Supply",
+       "share": 0.767,
+       "won": 23,
+       "awards": 30
+      },
+      {
+       "buyer": "PIU Office of Ghoraghat Pourashava, Dinajpur",
+       "supplier": "M/S. Runa Enterprise",
+       "share": 0.7,
+       "won": 28,
+       "awards": 40
+      },
+      {
+       "buyer": "Paikgacha Upazila Health Complex",
+       "supplier": "lucky Medicine Supply",
+       "share": 0.7,
+       "won": 21,
+       "awards": 30
+      },
+      {
+       "buyer": "Office of the Principal, Jessore Technical School & College",
+       "supplier": "M/S Dhaka Metal & Machinarise Store",
+       "share": 0.667,
+       "won": 26,
+       "awards": 39
+      }
+     ]
+    },
+    "direct": {
+     "available": true,
+     "tenders_with_method": 892531,
+     "direct": 906,
+     "share": 0.001,
+     "methods": {
+      "open": 470916,
+      "selective": 392175,
+      "limited": 28534,
+      "direct": 906
+     }
+    },
+    "single_bid": {
+     "available": true,
+     "tenders_with_count": 22558,
+     "single": 2946,
+     "share": 0.1306
+    },
+    "short_window": {
+     "available": false,
+     "why": "bidding window start and end dates not given"
+    },
+    "concentration": {
+     "available": true,
+     "currency": "BDT",
+     "suppliers": 65177,
+     "top5pct_suppliers": 3259,
+     "top5pct_share_of_value": 0.6461
+    }
+   }
+  },
+  {
+   "id": "ke",
+   "country": "Kenya",
+   "country_bn": "কেনিয়া",
+   "source": "Public Procurement Regulatory Authority (PPRA)",
+   "url": "https://data.open-contracting.org/en/publication/147",
+   "note": null,
+   "releases": 262961,
+   "tenders": 262961,
+   "awards_with_supplier": 80309,
+   "buyers": 566,
+   "period": [
+    "2018-07-27",
+    "2026-10-31"
+   ],
+   "checks": {
+    "dominance": {
+     "available": true,
+     "buyers_checked": 318,
+     "flagged": 0,
+     "share": 0.0,
+     "examples": []
+    },
+    "direct": {
+     "available": true,
+     "tenders_with_method": 262858,
+     "direct": 8769,
+     "share": 0.0334,
+     "methods": {
+      "open": 236620,
+      "direct": 8769,
+      "selective": 17469,
+      "not in codelist": 103
+     }
+    },
+    "single_bid": {
+     "available": false,
+     "why": "number of tenders received not given"
+    },
+    "short_window": {
+     "available": false,
+     "data_quality": true,
+     "why": "bidding window dates look unreliable: 93% of open tenders end on or before the day they start",
+     "unreliable_share": 0.9346
+    },
+    "concentration": {
+     "available": true,
+     "currency": "KES",
+     "suppliers": 37394,
+     "top5pct_suppliers": 1870,
+     "top5pct_share_of_value": 0.8837
+    }
+   }
+  },
+  {
+   "id": "np",
+   "country": "Nepal",
+   "country_bn": "নেপাল",
+   "source": "Public Procurement Monitoring Office (PPMO), from Nepal's e-GP system",
+   "url": "https://data.open-contracting.org/en/publication/36",
+   "note": "Tender notices only: this publication has no award or winner data.",
+   "releases": 4872,
+   "tenders": 4872,
+   "awards_with_supplier": 0,
+   "buyers": null,
+   "period": [
+    "2016-05-03",
+    "2018-08-13"
+   ],
+   "checks": {
+    "dominance": {
+     "available": false,
+     "why": "no award winners in this data"
+    },
+    "direct": {
+     "available": true,
+     "tenders_with_method": 4872,
+     "direct": 0,
+     "share": 0.0,
+     "methods": {
+      "open": 4872
+     }
+    },
+    "single_bid": {
+     "available": true,
+     "tenders_with_count": 3899,
+     "single": 742,
+     "share": 0.1903
+    },
+    "short_window": {
+     "available": true,
+     "open_tenders_with_dates": 4872,
+     "short": 12,
+     "share": 0.0025,
+     "median_days": 30.5
+    },
+    "concentration": {
+     "available": false,
+     "why": "no award values with a winner"
+    }
+   }
+  },
+  {
+   "id": "in_as",
+   "country": "India (Assam state)",
+   "country_bn": "ভারত (আসাম রাজ্য)",
+   "source": "Assam State Government Finance Department",
+   "url": "https://data.open-contracting.org/en/publication/131",
+   "note": "Tender notices only: this publication has no award or winner data.",
+   "releases": 34232,
+   "tenders": 34232,
+   "awards_with_supplier": 0,
+   "buyers": null,
+   "period": [
+    "2022-09-29",
+    "2022-09-29"
+   ],
+   "checks": {
+    "dominance": {
+     "available": false,
+     "why": "no award winners in this data"
+    },
+    "direct": {
+     "available": false,
+     "why": "buying method not given in the OCDS codelist",
+     "methods": {
+      "not in codelist": 34232
+     }
+    },
+    "single_bid": {
+     "available": true,
+     "tenders_with_count": 28015,
+     "single": 4532,
+     "share": 0.1618
+    },
+    "short_window": {
+     "available": false,
+     "why": "bidding window start and end dates not given"
+    },
+    "concentration": {
+     "available": false,
+     "why": "no award values with a winner"
+    }
+   }
+  }
+ ]
+}

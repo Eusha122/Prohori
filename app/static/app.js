@@ -1,6 +1,6 @@
 // Prohori front end. Routes: #/  #/search/<q>  #/company/<key>  #/office/<name>  #/patterns  #/debarred  #/largest
 //   #/watchlist[/<overall|size>/<division>]  #/model  #/about  #/pricing  #/probashi  #/districts  #/district/<name>
-//   #/check[/<q>]  #/report/<key>  #/brief/<key> (investigator agent)  #/numbers (team only)
+//   #/check[/<q>]  #/report/<key>  #/brief/<key> (investigator agent)  #/global  #/opendata  #/numbers (team only)
 // Every visible text has an English and a Bangla version: T('English', 'বাংলা'). The language button in the top-right
 // corner switches all of it, including numbers, Taka amounts and dates, and is remembered in the browser.
 const view = document.getElementById('view');
@@ -90,6 +90,8 @@ const CHROME_BN = {
   'Largest contracts': 'সবচেয়ে বড় চুক্তি', 'For Bangladeshis Abroad': 'প্রবাসীদের জন্য', 'My home district': 'আমার জেলা',
   'Check a company before you give or invest': 'টাকা দেওয়া বা বিনিয়োগের আগে প্রতিষ্ঠান যাচাই', 'Plans and waitlist': 'প্ল্যান ও অপেক্ষার তালিকা',
   'Contractor Check Report for banks (sample)': 'ব্যাংকের জন্য ঠিকাদার যাচাই রিপোর্ট (নমুনা)', Help: 'সাহায্য',
+  'Open Data and Other Countries': 'উন্মুক্ত তথ্য ও অন্য দেশ', 'Same checks in other countries': 'অন্য দেশে একই যাচাই',
+  'Open data and AI tools (OCDS, MCP)': 'উন্মুক্ত তথ্য ও এআই টুল (OCDS, MCP)',
   'How Prohori works': 'প্রহরী কীভাবে কাজ করে', 'How to read a risk flag': 'ঝুঁকির সংকেত কীভাবে পড়বেন',
   'How accurate is the AI?': 'এআই কতটা সঠিক?', 'Original data: e-GP portal': 'মূল তথ্য: ই-জিপি পোর্টাল',
   TICKER: 'নোটিশ: প্রহরীর সংকেতগুলো যাচাইয়ের জন্য, অভিযোগ নয় — সিদ্ধান্ত সবসময় মানুষ নেয়। · এআই শুধু যাচাইয়ের অগ্রাধিকার ঠিক করে; কোনো প্রতিষ্ঠান সম্পর্কে সিদ্ধান্ত দেয় না।',
@@ -486,7 +488,8 @@ async function company(key) {
     ])}
     <p class="actions"><a class="btn-main" href="#/brief/${encodeURIComponent(key)}">${T('Make a brief on this firm', 'এই প্রতিষ্ঠানের ওপর ব্রিফ তৈরি করুন')}</a>
       <a class="btn-line" href="#/report/${encodeURIComponent(key)}">${T('Contractor Check Report (for banks)', 'ঠিকাদার যাচাই রিপোর্ট (ব্যাংকের জন্য)')}</a>
-      ${signupBtn('notify', T('Notify me when it wins a contract', 'নতুন কাজ পেলে আমাকে জানান'), c.name)}</p>
+      ${signupBtn('notify', T('Notify me when it wins a contract', 'নতুন কাজ পেলে আমাকে জানান'), c.name)}
+      <a class="btn-line" href="/api/ocds/company?key=${encodeURIComponent(key)}" download="prohori-${esc(key.replace(/[^a-z0-9]+/g, '-'))}-ocds.json">${T("Download this firm's data (OCDS)", 'এই প্রতিষ্ঠানের তথ্য ডাউনলোড (OCDS)')}</a></p>
     <h2>${T('Risk Patterns', 'ঝুঁকির সংকেত')} ${bnNote('(ঝুঁকির সংকেত)')}</h2>${flags}
     ${riskSection(r, m, c)}
     <h2>${T('Contracts Won per Year', 'বছরভিত্তিক জেতা চুক্তি')}</h2>${yearList(r.by_year)}
@@ -1176,6 +1179,123 @@ document.getElementById('navshade').addEventListener('click', () => setMenu(fals
 document.getElementById('sidenav').addEventListener('click', e => { if (e.target.closest('a[href^="#/"]')) setMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 
+// ---------- Same checks in other countries (#/global) ----------
+// pipeline/ocds_checks.py runs one piece of code on Bangladesh's OCDS export and on other countries' OCDS data.
+const checkInfo = () => ({
+  dominance: [T('Offices where one firm won 40%+ of awards', 'যে অফিসে একটি প্রতিষ্ঠান ৪০%+ কাজ পেয়েছে'),
+    T('Among buying offices with 30 or more awards', '৩০টি বা বেশি কাজ দেওয়া অফিসগুলোর মধ্যে')],
+  direct: [T('Tenders with no competition (direct buying)', 'প্রতিযোগিতা ছাড়া (সরাসরি ক্রয়) দরপত্র'),
+    T('OCDS method "direct"', 'OCDS পদ্ধতি "direct"')],
+  single_bid: [T('Tenders that got only one bid', 'মাত্র একটি দরপ্রস্তাব পাওয়া দরপত্র'),
+    T('Among tenders where the number of bids is given', 'যেসব দরপত্রে দরপ্রস্তাবের সংখ্যা আছে')],
+  short_window: [T('Open tenders with under 7 days to bid', '৭ দিনের কম সময়ে দরপ্রস্তাব জমার উন্মুক্ত দরপত্র'),
+    T('Among open tenders with start and end dates', 'শুরু ও শেষের তারিখ আছে এমন উন্মুক্ত দরপত্রের মধ্যে')],
+  concentration: [T('Value won by the top 5% of suppliers', 'শীর্ষ ৫% সরবরাহকারীর পাওয়া মোট মূল্যের অংশ'),
+    T('Share of all award value', 'সব চুক্তিমূল্যের অংশ')],
+});
+
+async function globalPage() {
+  const d = await api('/api/global');
+  const ds = d.datasets, CHECK_INFO = checkInfo();
+  const cell = c => {
+    if (c.available) {
+      const extra = c.flagged != null ? T(`${num(c.flagged)} of ${num(c.buyers_checked)} offices`, `${num(c.buyers_checked)}টির মধ্যে ${num(c.flagged)}টি অফিস`)
+        : c.single != null ? T(`${num(c.single)} of ${num(c.tenders_with_count)}`, `${num(c.tenders_with_count)}টির মধ্যে ${num(c.single)}টি`)
+        : c.direct != null ? T(`${num(c.direct)} of ${num(c.tenders_with_method)}`, `${num(c.tenders_with_method)}টির মধ্যে ${num(c.direct)}টি`)
+        : c.short != null ? T(`median window ${c.median_days} days`, `মাঝামাঝি সময় ${dig(c.median_days)} দিন`)
+        : c.top5pct_suppliers != null ? T(`${num(c.top5pct_suppliers)} of ${num(c.suppliers)} suppliers`, `${num(c.suppliers)} সরবরাহকারীর মধ্যে ${num(c.top5pct_suppliers)}`) : '';
+      const share = c.share ?? c.top5pct_share_of_value;
+      return `<b>${dig((share * 100).toFixed(share < 0.1 ? 1 : 0))}%</b><br><span class="muted">${extra}</span>`;
+    }
+    return `<span class="muted">${c.data_quality ? `<b class="bad">${T('Data problem', 'তথ্যে সমস্যা')}</b>: ` : ''}${esc(T(c.why, c.data_quality
+      ? `শুরুর দিনে বা তার আগেই শেষ হওয়া দরপত্র ${dig(Math.round(c.unreliable_share * 100))}%` : 'এই তথ্যে নেই'))}</span>`;
+  };
+  view.innerHTML = `
+    <h1>${T('Same Checks in Other Countries', 'অন্য দেশে একই যাচাই')}</h1>
+    <p>${T(`Prohori's rule-based checks read the <b>Open Contracting Data Standard (OCDS)</b>, the international format that
+      many governments use to publish contracts. The <b>same code</b> runs on Bangladesh's data (converted to OCDS by
+      Prohori) and on other countries' official open data from the Open Contracting Partnership's data registry. Where a
+      country's data lacks a field, the check says so.`,
+      `প্রহরীর নিয়মভিত্তিক যাচাই <b>ওপেন কন্ট্র্যাক্টিং ডেটা স্ট্যান্ডার্ড (OCDS)</b> পড়ে, যে আন্তর্জাতিক ফরম্যাটে অনেক দেশের সরকার চুক্তির তথ্য প্রকাশ করে।
+      <b>একই কোড</b> বাংলাদেশের তথ্যে (প্রহরী OCDS-এ রূপান্তর করেছে) এবং ওপেন কন্ট্র্যাক্টিং পার্টনারশিপের তথ্যভান্ডার থেকে নেওয়া অন্য দেশের সরকারি উন্মুক্ত তথ্যে চলে।
+      কোনো দেশের তথ্যে প্রয়োজনীয় অংশ না থাকলে যাচাই সেটি জানিয়ে দেয়।`)}</p>
+    <p class="notice">${T(`These are patterns for review, not findings of wrongdoing. Countries record data differently, so compare with care.
+      Prohori's AI model is used only for Bangladesh: it learned from Bangladesh's ban list, and these datasets have no comparable label.`,
+      `এগুলো যাচাইয়ের সংকেত, অন্যায়ের প্রমাণ নয়। দেশভেদে তথ্য রাখার ধরন আলাদা, তাই সাবধানে তুলনা করুন।
+      প্রহরীর এআই মডেল শুধু বাংলাদেশে ব্যবহৃত হয়: এটি বাংলাদেশের নিষিদ্ধ তালিকা থেকে শিখেছে, আর এই তথ্যে তুলনীয় কিছু নেই।`)}</p>
+    <h2>${T('Results', 'ফলাফল')}</h2>
+    <table class="gtable"><tr><th>${T('Check', 'যাচাই')}</th>${ds.map(x => `<th>${esc(T(x.country, x.country_bn))}</th>`).join('')}</tr>
+      ${Object.keys(CHECK_INFO).map(k => `<tr><td><b>${CHECK_INFO[k][0]}</b><br><span class="muted">${CHECK_INFO[k][1]}</span></td>
+        ${ds.map(x => `<td>${cell(x.checks[k])}</td>`).join('')}</tr>`).join('')}
+    </table>
+    <h2>${T('The Data Behind Each Column', 'প্রতিটি কলামের তথ্য')}</h2>
+    <table><tr><th>${T('Country', 'দেশ')}</th><th>${T('Source', 'উৎস')}</th><th>${T('Period', 'সময়কাল')}</th><th class="num">${T('Records', 'রেকর্ড')}</th><th class="num">${T('Awards with a winner', 'বিজয়ীসহ চুক্তি')}</th></tr>
+      ${ds.map(x => `<tr><td>${esc(T(x.country, x.country_bn))}</td><td><a target="_blank" rel="noopener" href="${esc(x.url)}">${esc(x.source)} ${ICON.ext}</a>
+        ${x.note ? `<br><span class="muted">${esc(x.note)}</span>` : ''}</td>
+        <td>${x.period ? `${date(x.period[0])} – ${date(x.period[1])}` : '—'}</td><td class="num">${num(x.releases)}</td><td class="num">${num(x.awards_with_supplier)}</td></tr>`).join('')}
+    </table>
+    <p class="muted">${T(`Checked on ${d.made}. Code: pipeline/ocds_checks.py. Bangladesh's top-5% figure can be compared with
+      Transparency International Bangladesh's own finding that the top 5% of contractors won 61% of e-GP contract value.`,
+      `যাচাইয়ের তারিখ ${d.made}। কোড: pipeline/ocds_checks.py। বাংলাদেশের শীর্ষ ৫%-এর হিসাব টিআইবির নিজস্ব গবেষণার সঙ্গে মেলানো যায়: সেখানে শীর্ষ ৫% ঠিকাদার ই-জিপি চুক্তিমূল্যের ৬১% পেয়েছে।`)}</p>
+    <p class="actions"><a class="btn-line" href="#/opendata">${T('Download the open data and use the AI tools', 'উন্মুক্ত তথ্য ডাউনলোড ও এআই টুল ব্যবহার')} ${ICON.more}</a></p>`;
+}
+
+// ---------- Open data (OCDS downloads) and AI tools (MCP) (#/opendata) ----------
+const MCP_TOOLS = [
+  ['search_firms_and_offices', 'Find companies and government offices by name', 'নামে প্রতিষ্ঠান ও সরকারি অফিস খোঁজা'],
+  ['get_company', "A company's contract record, ban record and AI review priority", 'একটি প্রতিষ্ঠানের চুক্তি, নিষেধাজ্ঞা ও এআই যাচাই-অগ্রাধিকার'],
+  ['get_office', "A government office's contracts and main winners", 'একটি সরকারি অফিসের চুক্তি ও প্রধান বিজয়ী'],
+  ['check_ban_list', "Search the government's e-GP ban list", 'সরকারি ই-জিপি নিষিদ্ধ তালিকায় খোঁজা'],
+  ['ai_watchlist', 'Firms the AI ranks first for review', 'এআই যাদের আগে যাচাই করতে বলে'],
+  ['model_accuracy', 'How accurate the AI was in tests', 'পরীক্ষায় এআই কতটা সঠিক ছিল'],
+  ['search_procurement_law', 'Search the procurement law, with official PDF pages', 'ক্রয় আইনে খোঁজা, সরকারি পিডিএফ পৃষ্ঠাসহ'],
+  ['make_brief', 'Run the investigator agent on one company', 'একটি প্রতিষ্ঠানের ওপর অনুসন্ধানী ব্রিফ তৈরি'],
+  ['company_awards_ocds', "A company's awards in OCDS format", 'একটি প্রতিষ্ঠানের চুক্তি OCDS ফরম্যাটে'],
+  ['compare_countries', 'The same checks in other countries', 'অন্য দেশে একই যাচাই'],
+];
+
+async function openDataPage() {
+  const d = await api('/api/ocds/files');
+  const v = d.validation;
+  const total = d.files.reduce((a, f) => a + f.releases, 0);
+  const mb = b => dig((b / 1048576).toFixed(1));
+  const endpoint = `${location.origin}/mcp`;
+  view.innerHTML = `
+    <h1>${T('Open Data and AI Tools', 'উন্মুক্ত তথ্য ও এআই টুল')}</h1>
+    <h2>${T('All Bangladesh e-GP Awards in OCDS', 'সব বাংলাদেশ ই-জিপি চুক্তি OCDS ফরম্যাটে')}</h2>
+    <p>${T(`Every contract award Prohori collected from the e-GP portal, in the <b>Open Contracting Data Standard 1.1</b>, the format used by
+      governments and watchdogs worldwide. One file per year. Official award facts only: no risk scores.`,
+      `ই-জিপি পোর্টাল থেকে প্রহরীর সংগ্রহ করা সব চুক্তি, বিশ্বজুড়ে সরকার ও পর্যবেক্ষকদের ব্যবহৃত <b>ওপেন কন্ট্র্যাক্টিং ডেটা স্ট্যান্ডার্ড ১.১</b> ফরম্যাটে।
+      প্রতি বছরের জন্য একটি ফাইল। শুধু সরকারি চুক্তির তথ্য, কোনো ঝুঁকি স্কোর নেই।`)}</p>
+    ${facts([
+      [T('Contract awards', 'চুক্তি'), num(total)],
+      [T('Checked against the official OCDS schema', 'সরকারি OCDS স্কিমার সঙ্গে যাচাই'), v
+        ? (v.valid ? T(`Valid (random sample of ${num(v.releases_checked)} records from every year)`, `বৈধ (প্রতি বছর থেকে দৈবচয়নে ${num(v.releases_checked)}টি রেকর্ড)`)
+          : `<b class="bad">${T(`${num(v.errors.length)} problems found`, `${num(v.errors.length)}টি সমস্যা`)}</b>`) : '—'],
+    ])}
+    ${d.files.length ? `<table><tr><th>${T('Year', 'বছর')}</th><th class="num">${T('Awards', 'চুক্তি')}</th><th class="num">${T('Size', 'আকার')}</th><th></th></tr>
+      ${d.files.map(f => `<tr><td>${dig(f.year)}</td><td class="num">${num(f.releases)}</td><td class="num">${mb(f.bytes)} MB</td>
+        <td><a href="/ocds/${esc(f.file)}" download>${T('Download', 'ডাউনলোড')} (${esc(f.file)})</a></td></tr>`).join('')}</table>`
+      : `<p class="muted">${T('The yearly files are being prepared on this server.', 'এই সার্ভারে বছরভিত্তিক ফাইল তৈরি হচ্ছে।')}</p>`}
+    <p class="muted">${T(`Notes: the ocid prefix "ocds-prhr01" is a placeholder, not yet registered with the Open Contracting Partnership. Company ids are
+      made by Prohori from cleaned names (older e-GP notices have no company id), so different firms with the same name share an id.
+      Each record links to its official e-GP award notice. Any single firm's awards: the "Download this firm's data" link on its page.`,
+      `টীকা: ocid-এর শুরুর অংশ "ocds-prhr01" অস্থায়ী, এখনো ওপেন কন্ট্র্যাক্টিং পার্টনারশিপে নিবন্ধিত নয়। প্রতিষ্ঠানের আইডি প্রহরী পরিষ্কার করা নাম থেকে বানিয়েছে
+      (পুরোনো ই-জিপি নোটিশে প্রতিষ্ঠানের আইডি নেই), তাই একই নামের আলাদা প্রতিষ্ঠান একই আইডি পেতে পারে। প্রতিটি রেকর্ডে সরকারি ই-জিপি নোটিশের লিংক আছে।`)}</p>
+    <h2>${T('For AI Assistants: Prohori MCP Server', 'এআই সহকারীর জন্য: প্রহরী MCP সার্ভার')}</h2>
+    <p>${T(`Any AI assistant or agent that supports the <b>Model Context Protocol (MCP)</b> can connect to Prohori and use its data directly,
+      with sources. All tools are read-only and follow the same limits as this website.`,
+      `<b>মডেল কনটেক্সট প্রোটোকল (MCP)</b> সমর্থন করে এমন যেকোনো এআই সহকারী বা এজেন্ট প্রহরীর সঙ্গে যুক্ত হয়ে সরাসরি তথ্য ব্যবহার করতে পারে, উৎসসহ।
+      সব টুল শুধু পড়ার জন্য এবং এই ওয়েবসাইটের মতো একই সীমা মেনে চলে।`)}</p>
+    ${facts([[T('Server address', 'সার্ভারের ঠিকানা'), `<code>${esc(endpoint)}</code>`], [T('Type', 'ধরন'), 'Streamable HTTP']])}
+    <table><tr><th>${T('Tool', 'টুল')}</th><th>${T('What it does', 'কী করে')}</th></tr>
+      ${MCP_TOOLS.map(([n, en, bn]) => `<tr><td><code>${n}</code></td><td>${esc(T(en, bn))}</td></tr>`).join('')}</table>
+    <p class="muted">${T('Example setting for an MCP client:', 'MCP ক্লায়েন্টের জন্য উদাহরণ সেটিং:')}</p>
+    <pre class="code">${esc(JSON.stringify({ mcpServers: { prohori: { type: 'http', url: endpoint } } }, null, 2))}</pre>
+    <p class="notice">${T('Every answer from the tools carries the same notice as this website: patterns and scores are signals for human review, not proof of wrongdoing.',
+      'টুলের প্রতিটি উত্তরে এই ওয়েবসাইটের মতো একই নোটিশ থাকে: সংকেত ও স্কোর মানুষের যাচাইয়ের জন্য, অন্যায়ের প্রমাণ নয়।')}</p>`;
+}
+
 // ---------- Investigator agent: "Make a brief on this firm" (#/brief/<key>) ----------
 // The server streams each tool call the AI agent makes, then the finished brief with numbered sources and
 // the results of its checks (numbers, citations, wording).
@@ -1402,11 +1522,13 @@ async function route() {
     else if (page === 'district') await districtPage(arg);
     else if (page === 'report') await report(arg);
     else if (page === 'brief') await briefPage(arg);
+    else if (page === 'global') await globalPage();
+    else if (page === 'opendata') await openDataPage();
     else if (page === 'numbers') await numbers();
     else await home();
     labelTables();
     // Tell the AI assistant what is on screen: a company, an office, or one of the list pages.
-    const PAGES = ['search', 'patterns', 'debarred', 'largest', 'watchlist', 'model', 'about', 'pricing', 'probashi', 'check', 'districts'];
+    const PAGES = ['search', 'patterns', 'debarred', 'largest', 'watchlist', 'model', 'about', 'pricing', 'probashi', 'check', 'districts', 'global', 'opendata'];
     const KEYED = ['company', 'office', 'district', 'report', 'brief'];
     const ctx = KEYED.includes(page) ? page : PAGES.includes(page) ? page : 'home';
     const h1 = view.querySelector('h1');

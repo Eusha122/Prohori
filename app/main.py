@@ -6,6 +6,7 @@ Stop the app before re-running the pipeline scripts (they need write access to t
 import json
 import os
 import secrets
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import duckdb
@@ -18,6 +19,7 @@ import pandas as pd
 
 from fastapi.responses import StreamingResponse
 
+from app import ocds as OCDS
 from app.agent import Investigator
 from app.ai import PAGE_ABOUT, AIUnavailable, NovaAssistant, fact_sheet, office_sheet, page_sheet
 from app.growth import Growth
@@ -35,7 +37,13 @@ MIN_OFFICE_CONTRACTS = 20
 DIRECT_SHARE = 0.30
 AMBIGUOUS_DISTRICTS = 9
 
-app = FastAPI(title="Prohori")
+@asynccontextmanager
+async def lifespan(_app):
+    async with MCP.session_manager.run():        # the MCP endpoint (/mcp) needs its session manager running
+        yield
+
+
+app = FastAPI(title="Prohori", lifespan=lifespan)
 _db = duckdb.connect(str(DB_PATH), read_only=True)
 RISK = RiskIndex(_db)
 AI = NovaAssistant()
@@ -463,8 +471,7 @@ def brief(request: Request, key: str, lang: str = "en"):
     """Investigator agent: streams each tool call as it happens, then the finished, checked brief (server-sent events)."""
     if not query("SELECT 1 AS x FROM company_summary WHERE winner_key = ?", [key]):
         raise HTTPException(404, "company not found")
-    status = ROOT / "data" / "last_update.json"
-    data_date = json.loads(status.read_text(encoding="utf8"))["updated"][:10] if status.exists() else "local"
+    data_date = globals()["data_date"]()
     ip = client_ip(request)
 
     def events():
@@ -528,9 +535,92 @@ def numbers(request: Request):
     return GROWTH.numbers()
 
 
+def data_date() -> str:
+    """Date of the last nightly data update (part of the saved-brief key, so briefs refresh with the data)."""
+    status = ROOT / "data" / "last_update.json"
+    return json.loads(status.read_text(encoding="utf8"))["updated"][:10] if status.exists() else "local"
+
+
+EGP_NOTICE = OCDS.EGP_NOTICE
+
+
+def ban_search(name: str) -> list[dict]:
+    """Official e-GP debarment records whose company name matches (exact key first, then contains)."""
+    from pipeline.names import strict_key
+    key = strict_key(name)
+    rows = query("""SELECT company, area, debar_from, debar_to, debarred_by, reason FROM debarments
+        WHERE company_key = ? OR lower(company) LIKE ? ORDER BY company_key = ? DESC, debar_from DESC LIMIT 25""",
+                 [key, f"%{name.lower().strip()[:60]}%", key])
+    return [{"company": r["company"], "from": r["debar_from"], "to": r["debar_to"],
+             "debarred_by": (r["debarred_by"] or "").split(",")[0].strip(),
+             "reason_on_record": (r["reason"] or "").removesuffix("more").strip()} for r in rows]
+
+
+OCDS_DIR = ROOT / "data" / "ocds"
+INTL = Path(__file__).resolve().parent / "intl" / "checks.json"
+
+
+def ocds_company(key: str, limit: int = 500) -> dict:
+    rows = query("""SELECT tender_id, pkg_lot_id, title, ministry, procuring_entity, method, district, signed_date,
+        advertised_at, winner, winner_key, is_jv, value_bdt, foreign_currency, foreign_amount, fetched_at
+        FROM contracts WHERE winner_key = ? ORDER BY signed_date DESC LIMIT ?""", [key, limit])
+    if not rows:
+        raise HTTPException(404, "company not found")
+    received = {}
+    if HAS_DETAIL:
+        received = {(str(r["t"]), str(r["p"])): r["n"] for r in query(
+            f"SELECT d.tender_id AS t, d.pkg_lot_id AS p, d.received AS n FROM {DETAIL} d JOIN contracts c "
+            "ON c.tender_id = d.tender_id AND c.pkg_lot_id = d.pkg_lot_id WHERE c.winner_key = ? AND d.received IS NOT NULL",
+            [key])}
+    rels = [OCDS.release(r, received.get((str(r["tender_id"]), str(r["pkg_lot_id"])))) for r in rows]
+    return OCDS.package(rels, f"https://prohori.safeshare.co/api/ocds/company?key={key}")
+
+
+@app.get("/api/ocds/company")
+def ocds_company_api(key: str, limit: int = Query(500, ge=1, le=5000)):
+    """One firm's contract awards as an OCDS 1.1 release package (official award facts only, no risk scores)."""
+    return ocds_company(key, limit)
+
+
+@app.get("/api/ocds/files")
+def ocds_files():
+    """The yearly OCDS files for all Bangladesh e-GP awards, and the schema validation result."""
+    m, v = OCDS_DIR / "manifest.json", OCDS_DIR / "validation.json"
+    return {"files": json.loads(m.read_text(encoding="utf8")) if m.exists() else [],
+            "validation": json.loads(v.read_text(encoding="utf8")) if v.exists() else None}
+
+
+@app.get("/ocds/{name}")
+def ocds_download(name: str):
+    if not name.startswith("bd-egp-") or not name.endswith(".json.gz") or "/" in name or "\\" in name:
+        raise HTTPException(404, "not found")
+    f = OCDS_DIR / name
+    if not f.exists():
+        raise HTTPException(404, "not found")
+    return FileResponse(f, media_type="application/gzip", filename=name)
+
+
+def global_checks() -> dict:
+    return json.loads(INTL.read_text(encoding="utf8")) if INTL.exists() else {"datasets": []}
+
+
+@app.get("/api/global")
+def global_api():
+    """The same rule-based checks on Bangladesh and other countries' OCDS data (pipeline/ocds_checks.py)."""
+    return global_checks()
+
+
 @app.api_route("/", methods=["GET", "HEAD"])  # HEAD too: link checkers (e.g. the hackathon's) use it
 def index():
     return FileResponse(STATIC / "index.html")
 
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
+
+# MCP server for AI assistants at /mcp (read-only tools over the same data). Mounted last, so every route above wins.
+import sys  # noqa: E402
+
+from app.mcp_server import create_mcp, http_app  # noqa: E402
+
+MCP = create_mcp(sys.modules[__name__])
+app.mount("/", http_app(MCP))

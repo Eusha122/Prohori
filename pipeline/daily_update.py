@@ -125,6 +125,9 @@ def main():
         "updated": datetime.now().isoformat(timespec="seconds"), "contracts": after, "added": after - before,
         "debarments": n_debar, "rescored": rescored, "seconds": round(time.time() - t0),
     }), encoding="utf8")
+    if rescored:        # weekly: refresh the open-data (OCDS) files; separate process to keep memory low
+        r = subprocess.run([sys.executable, str(ROOT / "pipeline" / "export_ocds.py"), "--no-validate"], cwd=ROOT)
+        log(f"OCDS export {'done' if r.returncode == 0 else 'FAILED'}")
     log(f"done in {time.time() - t0:.0f}s; new database is live after the app restart")
 
 

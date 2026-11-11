@@ -35,6 +35,9 @@ AI assistant that only uses facts from the page.
 | **Prohori AI assistant** on every page (Amazon Nova 2 Lite on Bedrock): explains the page in simple Bangla or English, answers follow-up questions, refuses to accuse anyone | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | **Investigator agent**: one button, "Make a brief on this firm". The AI calls real tools (contract records, office records, the government ban list, the risk score, a search of the procurement law) and writes a one-page brief in which every fact cites a numbered source; the server then checks every number, every citation and the wording | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | **Law search (RAG)** over the Public Procurement Rules 2025, the Public Procurement Act 2006 and its 2025 / 2026 amendments (324 pages of official BPPA PDFs), by keyword and by meaning; every result links to the official PDF page | <img src="docs/icons/done.svg" width="18" alt="Done"> |
+| **Open data in OCDS**: all 892,574 awards in the Open Contracting Data Standard, validated against the official schema, downloadable by year or by firm | <img src="docs/icons/done.svg" width="18" alt="Done"> |
+| **Same checks in other countries**: one checker for any OCDS data, run on Bangladesh, Kenya, Nepal and India (Assam) | <img src="docs/icons/done.svg" width="18" alt="Done"> |
+| **MCP server** at `/mcp`: any AI assistant can query Prohori's records, ban list, AI priority, law search and briefs | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | Full English / বাংলা switch for the whole site, phone-friendly layout | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | District pages for all 64 districts, a section for Bangladeshis living abroad, printable Contractor Check Report | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | **Live on AWS** with HTTPS and a nightly data update from e-GP | <img src="docs/icons/done.svg" width="18" alt="Done"> |
@@ -169,6 +172,78 @@ the source: an official e-GP notice, the e-GP ban list, a Prohori record, or a p
 - **Limits:** summaries never repeat amounts, days or percentages from the machine reading, because digits may be
   misread. The brief says what a rule covers, never whether a firm followed it.
 
+## Open data (OCDS)
+
+Every contract award Prohori collected (**892,574**, 2011 to 2026) is published in the
+**Open Contracting Data Standard 1.1**, the format used by governments and watchdogs in many countries. One file per year,
+downloadable from the site's "Open data and AI tools" page, plus any single firm's awards from its company page.
+
+- **Mapping:** one release per awarded lot; the buying office is buyer and procuring entity, the winner is supplier; award
+  value, signing date, advertisement date, number of tenders received (where Prohori read the detail page), and a link to
+  the official e-GP award notice. e-GP buying methods are mapped to the OCDS codelist (OTM, OSTETM = open; LTM, QCBS,
+  SFB = selective; RFQ, RFQU, RFQL, IC = limited; DPM, SSS = direct). Code: `app/ocds.py`, `pipeline/export_ocds.py`.
+- **Validated** against the official OCDS 1.1.5 release-package schema: a random sample of 4,233 releases from every
+  year, **0 errors**. The files are refreshed weekly on the server.
+- **Official facts only:** no risk scores are published as data.
+- **Limits:** the ocid prefix `ocds-prhr01` is a placeholder, not yet registered with the Open Contracting Partnership.
+  Company ids are made by Prohori from cleaned names (older e-GP notices have no company id), so different firms with the
+  same name share an id.
+
+## Same checks in other countries
+
+`pipeline/ocds_checks.py` runs Prohori's rule-based checks on **any** OCDS data. The Bangladesh column comes from
+Prohori's own OCDS export, so every country goes through exactly the same code. Other countries' data comes from the
+Open Contracting Partnership's data registry: Kenya's Public Procurement Regulatory Authority (2018–2026,
+80,309 awards with a winner), Nepal's Public Procurement Monitoring Office (national e-GP tender notices,
+2016–2018) and India's Assam state finance department (tender notices).
+
+| Check | Bangladesh | Kenya | Nepal | India (Assam) |
+|---|---|---|---|---|
+| Offices (30+ awards) where one firm won 40%+ | **2.6%** | **0.0%** | not in this data | not in this data |
+| Tenders with no competition (direct) | **0.1%** | **3.3%** | **0.0%** | not in this data |
+| Tenders that got only one bid | **13%** | not in this data | **19%** | **16%** |
+| Open tenders with under 7 days to bid | not in this data | data problem: dates look unreliable | **0.2%** | not in this data |
+| Award value won by the top 5% of suppliers | **65%** | **88%** | not in this data | not in this data |
+
+- Where a country's data lacks a field, the check says so instead of guessing. Kenya's bidding-window dates are
+  unreliable (93% of open tenders end on or before the day they start), so that check is reported as a **data problem**,
+  not a finding.
+- Bangladesh's top-5% figure (65%) is close to Transparency International Bangladesh's independent finding that the top
+  5% of contractors won 61% of e-GP contract value.
+- The **AI risk model is used only for Bangladesh**: it learned from Bangladesh's debarment list, and these datasets have
+  no comparable label. Countries record data differently, so compare with care. These are patterns for review, not
+  findings of wrongdoing.
+
+![Same checks in other countries](docs/screenshots/global-checks.png)
+
+## For AI assistants: MCP server
+
+Any AI assistant or agent that supports the **Model Context Protocol** can connect to Prohori and use its data directly,
+with sources: **`https://prohori.safeshare.co/mcp`** (Streamable HTTP, stateless).
+
+```json
+{ "mcpServers": { "prohori": { "type": "http", "url": "https://prohori.safeshare.co/mcp" } } }
+```
+
+| Tool | What it does |
+|---|---|
+| `search_firms_and_offices` | Find companies and government offices by name (returns each company's key) |
+| `get_company` | A company's contract record, rule-based patterns, ban record, AI review priority and reasons, recent contracts with e-GP links |
+| `get_office` | A government office's contracts and main winners |
+| `check_ban_list` | Search the government's e-GP debarment list |
+| `ai_watchlist` | Firms the AI ranks first for review (overall or unusual for their size, by division) |
+| `model_accuracy` | Backtest results, including where the AI did not beat the size rule |
+| `search_procurement_law` | Law search with links to the official PDF pages |
+| `make_brief` | Runs the investigator agent and returns the checked brief with sources |
+| `company_awards_ocds` | A company's awards as an OCDS release package |
+| `compare_countries` | The same checks in other countries |
+
+- Built with the official MCP Python SDK (`app/mcp_server.py`) inside the same FastAPI app, so it reads the same data
+  and follows the same limits. All tools are read-only. Every answer carries Prohori's notice that patterns and scores
+  are signals for human review, not proof.
+- Requests whose host name is not Prohori's are refused (protection against DNS rebinding).
+- Tested with the official MCP client: all ten tools answer, and an unknown company gets a clear "search first" message.
+
 ## How well the AI works (tested on data it never saw)
 
 | | Main test (Jul 2023 – Jul 2024) | Earlier period (Jul 2020 – Jul 2021) |
@@ -241,7 +316,7 @@ models/      Trained model files and test results (metrics.json)
 deploy/      AWS setup, server services, nightly update timer
 brand/       Logo sources (SVG) and rendered PNGs
 docs/        Screenshots and icons
-tests/       Tests for the agent's checks and the law index (python -m pytest tests)
+tests/       Tests for the agent's checks, the law index, the OCDS export and the country checks (python -m pytest tests)
 data/        Raw and processed data, not committed (see data/README.md)
 ```
 
@@ -312,11 +387,16 @@ then falls back to keyword search.
 | `GET /api/explain`, `POST /api/ask` | AI assistant: explain the current page, answer a question |
 | `GET /api/brief?key=&lang=en\|bn` | Investigator agent: each tool call as it happens, then the checked brief (server-sent events) |
 | `GET /api/law?q=` | Law search: the most relevant pages of the procurement law, with links to the official PDF |
+| `GET /api/ocds/company?key=` | One firm's awards as an OCDS 1.1 release package |
+| `GET /api/ocds/files`, `GET /ocds/<file>` | The yearly OCDS files and their validation result; download one file |
+| `GET /api/global` | The same checks on Bangladesh and other countries |
+| `POST /mcp` | MCP server for AI assistants (Streamable HTTP) |
 
 ## Tech
 
 Python · DuckDB · pandas · RapidFuzz · scikit-learn · LightGBM · FastAPI · Uvicorn · Node.js · Playwright ·
 plain HTML/CSS/JS · Amazon Bedrock (Nova 2 Lite with tool use, Nova multimodal embeddings) · PyMuPDF ·
+Open Contracting Data Standard 1.1 · Model Context Protocol (official Python SDK) ·
 Amazon EC2 · IAM · Caddy · systemd.
 
 ## Contributing

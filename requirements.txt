@@ -17,3 +17,6 @@ lightgbm==4.7.0
 # Bangla AI explanations (Amazon Nova on Bedrock); keys in .env
 boto3==1.43.123
 python-dotenv==1.2.4
+
+# MCP server for AI assistants (app/mcp_server.py, served at /mcp)
+mcp==2.3.0
