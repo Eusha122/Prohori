@@ -135,7 +135,7 @@ brief has fixed sections (summary, contract record, where the work comes from, o
 priority, relevant rules, what a reviewer could check next). Every fact carries a citation such as [S3] that opens
 the source: an official e-GP notice, the e-GP ban list, a Prohori record, or a page of the official law PDF.
 
-**Checks the server makes before showing a brief** (shown at the end of every brief):
+**Checks the server makes before showing a brief** (the number check is shown at the end of every brief):
 
 - **Numbers:** every number of two or more digits in the brief is looked up in the tool results (Bangla digits
   included). Any number not found is listed for the reader. In testing on several firms, all numbers were found.
