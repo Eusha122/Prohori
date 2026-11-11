@@ -1,0 +1,15 @@
+# Exact versions for the AWS server (app + nightly data update). Same as the local .venv.
+duckdb==2.0.0
+pandas==3.1.0
+pyarrow==26.0.0
+numpy==2.4.6
+scikit-learn==1.9.1
+scipy==1.17.1
+joblib==1.6.0
+lightgbm==4.7.0
+RapidFuzz==3.14.6
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.2
+boto3==1.43.123
+python-dotenv==1.2.4

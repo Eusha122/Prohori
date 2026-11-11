@@ -1,0 +1,15 @@
+[Unit]
+Description=Prohori nightly data update (new e-GP awards + debarments), then restart the web app
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/opt/prohori
+EnvironmentFile=/opt/prohori/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/prohori/.venv/bin/python pipeline/daily_update.py
+# "+" runs this one line as root, so the update can restart the web app.
+ExecStartPost=+/bin/systemctl restart prohori.service
+TimeoutStartSec=2h
+Nice=10

@@ -53,6 +53,11 @@ def load_contracts() -> pd.DataFrame:
         with open(f, encoding="utf8") as fh:
             for line in fh:
                 rows.append(json.loads(line))
+    return to_contracts(rows)
+
+
+def to_contracts(rows: list[dict]) -> pd.DataFrame:
+    """Raw collector rows -> cleaned contracts table rows (also used by the nightly update)."""
     df = pd.DataFrame(rows)
     raw_count = len(df)
 

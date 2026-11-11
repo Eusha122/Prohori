@@ -35,13 +35,20 @@ def main():
     for w in winners:
         by_first_word.setdefault(w.split(" ")[0], []).append(w)
 
+    def same_initials(a: str, b: str) -> bool:
+        """Short tokens (initials like 'b h' vs 'b l') must match exactly; typos are only
+        tolerated inside longer words."""
+        short_a = [t for t in a.split() if len(t) <= 2]
+        short_b = [t for t in b.split() if len(t) <= 2]
+        return short_a == short_b
+
     links = []  # (debar_key, winner_key, level)
     for dk in debar_keys:
         if dk in winner_set:
             links.append((dk, dk, "exact"))
         candidates = by_first_word.get(dk.split(" ")[0], [])
         for wk, score, _ in process.extract(dk, candidates, scorer=fuzz.ratio, limit=5):
-            if wk != dk and score >= 95:
+            if wk != dk and score >= 95 and same_initials(dk, wk):
                 links.append((dk, wk, "fuzzy"))
 
     # Joint ventures: the debarred name appears as a whole phrase inside a JV winner.

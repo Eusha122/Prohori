@@ -1,0 +1,18 @@
+# HTTPS certificate is obtained and renewed automatically (Let's Encrypt).
+prohori.safeshare.co {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:8000
+}
+
+# Plain IP address (before the domain points here): serve the site over HTTP.
+:80 {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8000
+}

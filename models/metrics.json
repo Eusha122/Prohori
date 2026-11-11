@@ -1,0 +1,198 @@
+{
+  "model": "ensemble of logistic regression + monotone gradient boosting (rank average)",
+  "horizon_months": 24,
+  "main_test": {
+    "train": [
+      "2016-01-01",
+      "2016-04-01",
+      "2016-07-01",
+      "2016-10-01",
+      "2017-01-01",
+      "2017-04-01",
+      "2017-07-01",
+      "2017-10-01",
+      "2018-01-01",
+      "2018-04-01",
+      "2018-07-01",
+      "2018-10-01",
+      "2019-01-01",
+      "2019-04-01",
+      "2019-07-01",
+      "2019-10-01",
+      "2020-01-01",
+      "2020-04-01",
+      "2020-07-01"
+    ],
+    "valid": [
+      "2021-01-01",
+      "2021-04-01",
+      "2021-07-01"
+    ],
+    "test": [
+      "2023-07-01",
+      "2023-10-01",
+      "2024-01-01",
+      "2024-04-01",
+      "2024-07-01"
+    ],
+    "test_rows": 207511,
+    "test_positives": 764,
+    "base_rate": 0.003681732534660813,
+    "roc_auc": 0.7908116641892055,
+    "roc_auc_95ci": [
+      0.7607482018832022,
+      0.8140746525585292
+    ],
+    "pr_auc": 0.02278910917570333,
+    "top_1pct": {
+      "precision": 0.034216867469879515,
+      "recall": 0.09293193717277487,
+      "lift": 9.293686368510691
+    },
+    "top_5pct": {
+      "precision": 0.021686746987951807,
+      "recall": 0.29450261780104714,
+      "lift": 5.890364599760297
+    },
+    "top_10pct": {
+      "precision": 0.0171557997204954,
+      "recall": 0.46596858638743455,
+      "lift": 4.6597083191095825
+    },
+    "auc_within_size_deciles": 0.6973792233537243,
+    "auc_per_snapshot": {
+      "2023-07-01": 0.7752184047114923,
+      "2023-10-01": 0.7821514694492794,
+      "2024-01-01": 0.7989150066307329,
+      "2024-04-01": 0.8158611865426342,
+      "2024-07-01": 0.7926197719514176
+    },
+    "size_only_baseline": {
+      "roc_auc": 0.7775914504555319,
+      "top_5pct": {
+        "precision": 0.024963855421686748,
+        "recall": 0.3390052356020942,
+        "lift": 6.780464139279632
+      },
+      "auc_within_size_deciles": 0.6478944950847019
+    },
+    "caught_in_advance": {
+      "banned_entities_in_test": 224,
+      "flagged_top10pct_before_ban": 115,
+      "share": 0.5133928571428571,
+      "median_months_before_ban": 11.381578947368421
+    },
+    "gbm_rounds": 759
+  },
+  "stability_fold": {
+    "train": [
+      "2016-01-01",
+      "2016-04-01",
+      "2016-07-01",
+      "2016-10-01",
+      "2017-01-01",
+      "2017-04-01",
+      "2017-07-01",
+      "2017-10-01",
+      "2018-01-01",
+      "2018-04-01",
+      "2018-07-01"
+    ],
+    "valid": [
+      "2019-01-01",
+      "2019-04-01"
+    ],
+    "test": [
+      "2020-07-01",
+      "2020-10-01",
+      "2021-01-01",
+      "2021-04-01",
+      "2021-07-01"
+    ],
+    "test_rows": 179157,
+    "test_positives": 305,
+    "base_rate": 0.0017024174327545114,
+    "roc_auc": 0.7514734959906405,
+    "roc_auc_95ci": [
+      0.6997643034276744,
+      0.7948815603498507
+    ],
+    "pr_auc": 0.0054556440127476605,
+    "top_1pct": {
+      "precision": 0.007816862088218872,
+      "recall": 0.04590163934426229,
+      "lift": 4.591624790619766
+    },
+    "top_5pct": {
+      "precision": 0.007703472144691303,
+      "recall": 0.2262295081967213,
+      "lift": 4.525019537791671
+    },
+    "top_10pct": {
+      "precision": 0.006865754953949204,
+      "recall": 0.40327868852459015,
+      "lift": 4.032944459949762
+    },
+    "auc_within_size_deciles": 0.6161635377878312,
+    "auc_per_snapshot": {
+      "2020-07-01": 0.8006314607356771,
+      "2020-10-01": 0.763297706625903,
+      "2021-01-01": 0.6896761121909939,
+      "2021-04-01": 0.7148053234167686,
+      "2021-07-01": 0.7911351260291251
+    },
+    "size_only_baseline": {
+      "roc_auc": 0.7587990876603533,
+      "top_5pct": {
+        "precision": 0.010382940716757843,
+        "recall": 0.30491803278688523,
+        "lift": 6.098939377023557
+      },
+      "auc_within_size_deciles": 0.58329563159835
+    },
+    "caught_in_advance": {
+      "banned_entities_in_test": 117,
+      "flagged_top10pct_before_ban": 57,
+      "share": 0.48717948717948717,
+      "median_months_before_ban": 21.38157894736842
+    },
+    "gbm_rounds": 555
+  },
+  "logistic_weights": {
+    "total contract value": 1.242,
+    "share won as a joint venture": -0.747,
+    "share of open-tendering contracts": 0.717,
+    "largest contract": -0.598,
+    "share of contracts from local-government engineering (LGED)": 0.579,
+    "contracts won in the last 12 months": 0.454,
+    "share of road contracts": 0.393,
+    "contracts won (all time)": -0.393,
+    "average contract size": -0.384,
+    "number of ministries": 0.312,
+    "share of its own contracts from one office": -0.241,
+    "typical days from advertisement to contract": -0.221,
+    "share of contracts from roads & highways": -0.208,
+    "time since first contract": -0.204,
+    "growth in contracts vs the year before": -0.195,
+    "share of last year's offices that were new to it": 0.186,
+    "contract value in the last 12 months": -0.185,
+    "share of contracts signed under 21 days after advertisement": -0.18,
+    "share of water contracts": -0.159,
+    "share of supply contracts": -0.144,
+    "share of bridge contracts": 0.138,
+    "share of request-for-quotation contracts": -0.131,
+    "recent contract size vs its usual size": -0.108,
+    "time since last contract": 0.093,
+    "share of building contracts": -0.092,
+    "highest share of a single office's contracts": -0.087,
+    "share of limited-tendering contracts": 0.068,
+    "buying offices in the last 12 months": 0.059,
+    "offices where it wins 40%+ of contracts": -0.054,
+    "share of repair contracts": 0.038,
+    "number of districts": 0.03,
+    "share of service contracts": 0.026,
+    "number of buying offices": -0.024,
+    "share of electric contracts": -0.001,
+    "share of direct / single-source contracts": 0.0
+  }
+}

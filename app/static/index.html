@@ -4,79 +4,97 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Prohori — প্রহরী</title>
-  <link rel="icon" type="image/svg+xml" href="/static/brand/prohori-icon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/prohori-icon-32.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/brand/prohori-icon-180.png">
+  <link rel="icon" type="image/svg+xml" href="/static/brand/prohori-icon.svg?v=11">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/prohori-icon-32.png?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/brand/prohori-icon-180.png?v=11">
   <meta name="theme-color" content="#006a4e">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=15">
 </head>
 <body>
-  <div class="strip">Prohori — Public Procurement Watch · প্রহরী — সরকারি ক্রয় পর্যবেক্ষণ</div>
+  <div class="strip"><span class="strip-en">Prohori — Public Procurement Watch · </span>প্রহরী — সরকারি ক্রয় পর্যবেক্ষণ</div>
 
   <div class="wrap">
     <header class="head">
       <a href="#/" class="logo">
-        <img src="/static/brand/prohori-icon.svg" alt="" width="58" height="58">
+        <img src="/static/brand/prohori-icon.svg?v=11" alt="" width="58" height="58">
         <span>
           <span class="name bn">প্রহরী</span>
-          <span class="tag">Independent public-data watchdog · not a government website</span>
+          <span class="tag" data-i18n="Independent public-data watchdog · not a government website">Independent public-data watchdog · not a government website</span>
         </span>
       </a>
       <div class="head-right">
-        <div class="toplinks">
-          <a href="#/">Home</a> | <a href="#/patterns">Risk Patterns</a> | <a href="#/about">About</a> |
-          <span class="bn">বাংলা</span>
+        <div class="toprow">
+          <div class="toplinks">
+          <a href="#/" data-i18n="Home">Home</a> | <a href="#/watchlist" data-i18n="AI Watchlist">AI Watchlist</a> | <a href="#/probashi" data-i18n="Probashi">Probashi</a> | <a href="#/pricing" data-i18n="Plans">Plans</a> | <a href="#/about" data-i18n="About">About</a>
+          </div>
+          <a href="#" id="langToggle" class="lang bn" title="Switch language / ভাষা বদলান">বাংলা</a>
+          <button type="button" class="menubtn" id="menuBtn" aria-expanded="false" aria-controls="sidenav"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14M3 10h14M3 14.5h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="14.5" r="1.8" fill="#d62828"/></svg><span data-i18n="Menu">Menu</span></button>
         </div>
         <div id="clock" class="clock"></div>
       </div>
     </header>
 
     <form class="searchbar" onsubmit="location.hash='#/search/'+encodeURIComponent(this.q.value.trim());return false">
-      <input name="q" placeholder="Type a company or office name (e.g. LGED Naogaon)" autocomplete="off">
-      <button>Search</button>
-      <a href="#/patterns" class="adv">Risk Patterns</a>
+      <input name="q" placeholder="Type a company or office name (e.g. LGED Naogaon)" data-i18n-ph="Type a company or office name (e.g. LGED Naogaon)" autocomplete="off">
+      <button data-i18n="Search">Search</button>
+      <a href="#/patterns" class="adv" data-i18n="Risk Patterns">Risk Patterns</a>
     </form>
     <nav class="gonav">
-      <span class="lbl">Go To ›</span>
-      <a href="#/patterns"><svg viewBox="0 0 16 16"><path d="M8 1.5l7 12.5H1z" fill="#e0a100" stroke="#a36f00"/><path d="M8 6v4M8 11.6v.4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>Risk Patterns</a>
-      <a href="#/debarred"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.3" fill="#fff" stroke="#d62828" stroke-width="2"/><path d="M3.8 12.2l8.4-8.4" stroke="#d62828" stroke-width="2"/></svg>Debarred Firms</a>
-      <a href="#/largest"><svg viewBox="0 0 16 16"><rect x="1.5" y="9" width="3.5" height="5.5" fill="#5ba532"/><rect x="6.25" y="5.5" width="3.5" height="9" fill="#4a9227"/><rect x="11" y="2" width="3.5" height="12.5" fill="#006a4e"/></svg>Largest Contracts</a>
-      <a href="#/search/LGED"><svg viewBox="0 0 16 16"><path d="M1.5 14.5h13M3 14.5V6l5-3.5L13 6v8.5" fill="#eef6e6" stroke="#4c8a26" stroke-width="1.4"/><path d="M6.3 14.5V10h3.4v4.5" fill="none" stroke="#4c8a26" stroke-width="1.4"/></svg>Government Offices</a>
-      <a href="#/about"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="#1d4f91"/><path d="M8 7v4.5M8 4.6v.3" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>How It Works</a>
+      <span class="lbl"><span data-i18n="Go To">Go To</span> <svg class="ic" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2.5L7.5 6 4 9.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <a href="#/watchlist"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10S5 4.2 10 4.2 18.5 10 18.5 10 15 15.8 10 15.8 1.5 10 1.5 10z" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="10" cy="10" r="3.3" fill="#fff" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="10" cy="10" r="1.6" fill="#d62828"/></svg><span data-i18n="AI Watchlist">AI Watchlist</span></a>
+      <a href="#/patterns"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.6" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M10 10V2.4A7.6 7.6 0 1 1 5.1 15.8z" fill="#e9a23b" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="13.2" cy="9" r="1.3" fill="#d62828"/></svg><span data-i18n="Risk Patterns">Risk Patterns</span></a>
+      <a href="#/debarred"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2.5h7.5l4 4v11H4z" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M11.5 2.5v4h4M6.5 8h3.5M6.5 10.5h2.5" fill="none" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="13.4" cy="14.2" r="3.9" fill="#fff" stroke="#d62828" stroke-width="1.6"/><path d="M10.7 16.9l5.4-5.4" stroke="#d62828" stroke-width="1.6"/></svg><span data-i18n="Debarred Firms">Debarred Firms</span></a>
+      <a href="#/largest"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="1.8" y="14" width="9.6" height="3.6" rx="1.8" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><rect x="2.8" y="10.2" width="9.6" height="3.6" rx="1.8" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><rect x="1.8" y="6.4" width="9.6" height="3.6" rx="1.8" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="14.4" cy="12.4" r="4.4" fill="#fff" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="14.4" cy="12.4" r="1.6" fill="#d62828"/></svg><span data-i18n="Largest Contracts">Largest Contracts</span></a>
+      <a href="#/search/LGED"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 7.6L10 3l8 4.6z" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M4.6 9.6v5.4M8.2 9.6v5.4M11.8 9.6v5.4M15.4 9.6v5.4" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" stroke-width="1.8"/><path d="M2.4 17.6h15.2" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" stroke-width="1.9"/><circle cx="10" cy="5.9" r="1" fill="#d62828"/></svg><span data-i18n="Government Offices">Government Offices</span></a>
+      <a href="#/model"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.4 14.5a7.6 7.6 0 0 1 15.2 0z" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M5 9.2l.9.9M10 7v1.3M15 9.2l-.9.9" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" stroke-width="1.4"/><path d="M10 14.5l3.8-4.6" stroke="#d62828" stroke-width="1.9" stroke-linecap="round"/><circle cx="10" cy="14.5" r="1.6" fill="#2c6e1c"/><path d="M2.4 17.6h15.2" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg><span data-i18n="AI Accuracy">AI Accuracy</span></a>
+      <a href="#/probashi"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="10" r="7.4" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M1.6 10h14.8M9 2.6c-2.4 2.2-2.4 12.6 0 14.8M9 2.6c2.4 2.2 2.4 12.6 0 14.8" fill="none" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M15.6 4.2a2.6 2.6 0 0 1 2.6 2.6c0 2-2.6 4.4-2.6 4.4S13 8.8 13 6.8a2.6 2.6 0 0 1 2.6-2.6z" fill="#fff" stroke="#d62828" stroke-width="1.5"/><circle cx="15.6" cy="6.8" r="1" fill="#d62828"/></svg><span data-i18n="Probashi">Probashi</span></a>
+      <a href="#/pricing"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.6 3.4h6.6l8.2 8.2-6 6-8.8-8.2z" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6.4" cy="7.2" r="1.5" fill="#d62828"/><path d="M8.6 12.2l3.6-3.6M10.6 14.2l2.6-2.6" fill="none" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg><span data-i18n="Plans">Plans</span></a>
+      <a href="#/about"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 5.4C8 3.9 5 3.7 2.4 4.2v11.2c2.6-.5 5.6-.3 7.6 1.2 2-1.5 5-1.7 7.6-1.2V4.2C15 3.7 12 3.9 10 5.4z" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M10 5.4v11.2M4.8 7.6c1.2-.1 2.4 0 3.3.4M4.8 10.2c1.2-.1 2.4 0 3.3.4M11.9 10.6c1.2-.4 2.4-.5 3.3-.4" fill="none" stroke="#2c6e1c" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" stroke-width="1.2"/><circle cx="13.6" cy="7.9" r="1.2" fill="#d62828"/></svg><span data-i18n="How It Works">How It Works</span></a>
     </nav>
 
     <div class="ticker">
-      <span class="dot"></span>
-      <marquee scrollamount="4">Notice: Flags shown on Prohori are patterns for review, not accusations — a human always decides.
-        এগুলো যাচাইয়ের সংকেত, অভিযোগ নয়। · Data collection in progress — figures will grow.</marquee>
+      <svg class="tick-ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M2.6 8h3.2l7.4-4.2v12.4L5.8 12H2.6z" fill="#fdecec" stroke="#d62828" stroke-width="1.6" stroke-linejoin="round"/><path d="M5.8 12l1.3 4.6" stroke="#d62828" stroke-width="1.6" stroke-linecap="round"/><path d="M15.6 7.4a3.6 3.6 0 0 1 0 5.2" fill="none" stroke="#d62828" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <marquee scrollamount="4" data-i18n="TICKER">Notice: Flags shown on Prohori are patterns for review, not accusations — a human always decides. · AI scores rank firms for review; they never decide anything about a firm.</marquee>
     </div>
 
     <div class="layout">
-      <aside class="side">
-        <h3>Quick Links</h3>
+      <aside class="side" id="sidenav" aria-label="Menu">
+        <div class="drawer-head"><b data-i18n="Menu">Menu</b><button type="button" class="drawer-close" id="menuClose" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>
+        <h3 data-i18n="Quick Links">Quick Links</h3>
         <ul class="links">
-          <li><a href="#/">Home / At a glance</a></li>
-          <li><a href="#/patterns">Offices where one company wins most</a></li>
-          <li><a href="#/debarred">Debarred firms found in contracts</a></li>
-          <li><a href="#/largest">Largest contracts</a></li>
+          <li><a href="#/" data-i18n="Home / At a glance">Home / At a glance</a></li>
+          <li><a href="#/watchlist" data-i18n="AI watchlist: firms to review first">AI watchlist: firms to review first</a></li>
+          <li><a href="#/watchlist/size/" data-i18n="Unusual for their size">Unusual for their size</a></li>
+          <li><a href="#/patterns" data-i18n="Offices where one company wins most">Offices where one company wins most</a></li>
+          <li><a href="#/debarred" data-i18n="Debarred firms found in contracts">Debarred firms found in contracts</a></li>
+          <li><a href="#/largest" data-i18n="Largest contracts">Largest contracts</a></li>
         </ul>
-        <h3>Help</h3>
+        <h3 data-i18n="For Bangladeshis Abroad">For Bangladeshis Abroad</h3>
         <ul class="links">
-          <li><a href="#/about">How Prohori works</a></li>
-          <li><a href="#/about">How to read a risk flag</a></li>
-          <li><a target="_blank" rel="noopener" href="https://www.eprocure.gov.bd/">Original data: e-GP portal ↗</a></li>
+          <li><a href="#/districts" data-i18n="My home district">My home district</a></li>
+          <li><a href="#/check" data-i18n="Check a company before you give or invest">Check a company before you give or invest</a></li>
+        </ul>
+        <h3 data-i18n="Plans">Plans</h3>
+        <ul class="links">
+          <li><a href="#/pricing" data-i18n="Plans and waitlist">Plans and waitlist</a></li>
+          <li><a href="#/report/jakaullah%20and%20brothers" data-i18n="Contractor Check Report for banks (sample)">Contractor Check Report for banks (sample)</a></li>
+        </ul>
+        <h3 data-i18n="Help">Help</h3>
+        <ul class="links">
+          <li><a href="#/about" data-i18n="How Prohori works">How Prohori works</a></li>
+          <li><a href="#/about/flags" data-i18n="How to read a risk flag">How to read a risk flag</a></li>
+          <li><a href="#/model" data-i18n="How accurate is the AI?">How accurate is the AI?</a></li>
+          <li><a target="_blank" rel="noopener" href="https://www.eprocure.gov.bd/"><span data-i18n="Original data: e-GP portal">Original data: e-GP portal</span> <svg class="ic" viewBox="0 0 12 12" aria-hidden="true"><path d="M5 2.5H2.5v7h7V7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 1.5h3.5V5M10.5 1.5L5.5 6.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a></li>
         </ul>
       </aside>
       <main id="view"><p class="muted">Loading…</p></main>
     </div>
   </div>
 
-  <footer class="foot">
-    Data source: Bangladesh e-GP portal (eprocure.gov.bd) public award notices and debarment list ·
-    Prohori is an independent project and is not affiliated with BPPA or any government office.
-  </footer>
-  <script src="/static/app.js"></script>
+  <div class="navshade" id="navshade"></div>
+  <footer class="foot" data-i18n="FOOTER">Data source: Bangladesh e-GP portal (eprocure.gov.bd) public award notices and debarment list · Prohori is an independent project and is not affiliated with BPPA or any government office.</footer>
+  <script src="/static/app.js?v=15"></script>
 </body>
 </html>

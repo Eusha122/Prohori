@@ -1,0 +1,54 @@
+{
+  "main_test": {
+    "test_rows": 13035,
+    "test_positives": 764,
+    "coverage_detail": 0.9890295358649789,
+    "base_auc": 0.8003948708048774,
+    "detail_auc": 0.7973960894900413,
+    "auc_gain": -0.003199117742561329,
+    "auc_gain_95ci": [
+      -0.009502725512304924,
+      0.0031222268503226518
+    ],
+    "share_of_bootstraps_improved": 0.16,
+    "base_top10_recall": 0.4908376963350785,
+    "detail_top10_recall": 0.4790575916230366,
+    "detail_weights": {
+      "share of sampled contracts with only one tender received": -0.075,
+      "average number of tenders received": 0.064,
+      "share where at most one tender was responsive": -0.127,
+      "share where under half of sold tender documents were submitted": -0.024,
+      "share where performance security was not given in time": 0.197,
+      "share where the contract was not signed in time": 0.054,
+      "share funded by a development partner": 0.006,
+      "share paid from the revenue budget": 0.078,
+      "shares a business address with a different firm already banned": 0.0
+    }
+  },
+  "stability_fold": {
+    "test_rows": 11962,
+    "test_positives": 305,
+    "coverage_detail": 0.9478348102324026,
+    "base_auc": 0.7636997426104914,
+    "detail_auc": 0.7571152116478906,
+    "auc_gain": -0.006095604089112198,
+    "auc_gain_95ci": [
+      -0.012676505852248509,
+      0.0009118766680372523
+    ],
+    "share_of_bootstraps_improved": 0.05333333333333334,
+    "base_top10_recall": 0.4262295081967213,
+    "detail_top10_recall": 0.4,
+    "detail_weights": {
+      "share of sampled contracts with only one tender received": -0.155,
+      "average number of tenders received": 0.05,
+      "share where at most one tender was responsive": 0.062,
+      "share where under half of sold tender documents were submitted": -0.008,
+      "share where performance security was not given in time": 0.177,
+      "share where the contract was not signed in time": 0.129,
+      "share funded by a development partner": -0.039,
+      "share paid from the revenue budget": 0.023,
+      "shares a business address with a different firm already banned": 0.0
+    }
+  }
+}

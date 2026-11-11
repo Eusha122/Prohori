@@ -38,3 +38,13 @@ CONTEXT.md
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Private strategy research (keep out of the public repo)
+research_notes/
+reports/
+
+# Business plan, strategy and judge-only documents: NEVER upload
+private/
+
+# Server details (instance id, IP) - local only
+deploy/state.json
