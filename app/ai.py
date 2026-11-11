@@ -197,6 +197,10 @@ PAGE_ABOUT = {
              "types its name and sees its government contract record, whether the government officially debarred it, "
              "and patterns worth a closer look. It also advises checking the trade licence, TIN/BIN and e-GP tenderer "
              "ID, visiting the site and asking past clients. A clean record is not a guarantee; a flag is not proof.",
+    "mcp": "MCP server page: the address https://prohori.safeshare.co/mcp lets any AI assistant that supports the Model "
+           "Context Protocol use Prohori's data with read-only tools (search firms and offices, company record, office "
+           "record, ban list check, AI watchlist, model accuracy, procurement law search, investigator brief, OCDS data, "
+           "comparison with other countries). No login is needed. The page shows a live status and a test search.",
     "pricing": "Plans page: Prohori is free for citizens, journalists, students and Bangladeshis abroad. Paid plans "
                "for businesses are coming soon (waitlist only, nothing is sold yet): Contractor Pro for contractors "
                "(alerts, who wins at each office, price history), Lender Check (a Contractor Check Report for banks "

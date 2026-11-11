@@ -308,6 +308,14 @@ table.plans td:first-child { white-space: nowrap; }
 pre.code { background: #f4f7f1; border: 1px solid var(--line); padding: 10px 12px; overflow-x: auto; font-size: 12.5px; }
 main code { font-size: 12.5px; background: #f1f4ee; padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
 
+/* ---------- MCP server page (#/mcp) ---------- */
+.mcp-url { font-family: Consolas, "Courier New", monospace; font-weight: bold; color: var(--green); overflow-wrap: anywhere; }
+.btn-line.mcp-copy { padding: 1px 10px; font-size: 13px; margin-left: 6px; vertical-align: 1px; cursor: pointer; }
+.mcp-tool { font-family: Consolas, "Courier New", monospace; font-size: 13.5px; color: var(--green); white-space: nowrap; }
+.mcp-test { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; }
+.mcp-test input { flex: 1 1 260px; padding: 6px 9px; border: 1px solid #9cbf86; font: inherit; }
+@media (max-width: 760px) { .mcp-test label { flex-basis: 100%; } .mcp-test .btn-main { flex: 1 1 100%; } .mcp-tool { white-space: normal; } }
+
 /* ---------- Investigator brief (#/brief/<key>) ---------- */
 .brief .notice { margin: 8px 0 12px; }
 .brief .notice.bad { background: #fdecec; border-left-color: var(--red); }

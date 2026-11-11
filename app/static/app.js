@@ -1,6 +1,6 @@
 // Prohori front end. Routes: #/  #/search/<q>  #/company/<key>  #/office/<name>  #/patterns  #/debarred  #/largest
 //   #/watchlist[/<overall|size>/<division>]  #/model  #/about  #/pricing  #/probashi  #/districts  #/district/<name>
-//   #/check[/<q>]  #/report/<key>  #/brief/<key> (investigator agent)  #/global  #/opendata  #/numbers (team only)
+//   #/check[/<q>]  #/report/<key>  #/brief/<key> (investigator agent)  #/global  #/opendata  #/mcp  #/numbers (team only)
 // Every visible text has an English and a Bangla version: T('English', 'বাংলা'). The language button in the top-right
 // corner switches all of it, including numbers, Taka amounts and dates, and is remembered in the browser.
 const view = document.getElementById('view');
@@ -91,7 +91,7 @@ const CHROME_BN = {
   'Check a company before you give or invest': 'টাকা দেওয়া বা বিনিয়োগের আগে প্রতিষ্ঠান যাচাই', 'Plans and waitlist': 'প্ল্যান ও অপেক্ষার তালিকা',
   'Contractor Check Report for banks (sample)': 'ব্যাংকের জন্য ঠিকাদার যাচাই রিপোর্ট (নমুনা)', Help: 'সাহায্য',
   'Open Data and Other Countries': 'উন্মুক্ত তথ্য ও অন্য দেশ', 'Same checks in other countries': 'অন্য দেশে একই যাচাই',
-  'Open data and AI tools (OCDS, MCP)': 'উন্মুক্ত তথ্য ও এআই টুল (OCDS, MCP)',
+  'Open data and AI tools (OCDS, MCP)': 'উন্মুক্ত তথ্য ও এআই টুল (OCDS, MCP)', 'MCP server for AI assistants': 'এআই সহকারীর জন্য MCP সার্ভার',
   'How Prohori works': 'প্রহরী কীভাবে কাজ করে', 'How to read a risk flag': 'ঝুঁকির সংকেত কীভাবে পড়বেন',
   'How accurate is the AI?': 'এআই কতটা সঠিক?', 'Original data: e-GP portal': 'মূল তথ্য: ই-জিপি পোর্টাল',
   TICKER: 'নোটিশ: প্রহরীর সংকেতগুলো যাচাইয়ের জন্য, অভিযোগ নয় — সিদ্ধান্ত সবসময় মানুষ নেয়। · এআই শুধু যাচাইয়ের অগ্রাধিকার ঠিক করে; কোনো প্রতিষ্ঠান সম্পর্কে সিদ্ধান্ত দেয় না।',
@@ -1282,18 +1282,97 @@ async function openDataPage() {
       Each record links to its official e-GP award notice. Any single firm's awards: the "Download this firm's data" link on its page.`,
       `টীকা: ocid-এর শুরুর অংশ "ocds-prhr01" অস্থায়ী, এখনো ওপেন কন্ট্র্যাক্টিং পার্টনারশিপে নিবন্ধিত নয়। প্রতিষ্ঠানের আইডি প্রহরী পরিষ্কার করা নাম থেকে বানিয়েছে
       (পুরোনো ই-জিপি নোটিশে প্রতিষ্ঠানের আইডি নেই), তাই একই নামের আলাদা প্রতিষ্ঠান একই আইডি পেতে পারে। প্রতিটি রেকর্ডে সরকারি ই-জিপি নোটিশের লিংক আছে।`)}</p>
-    <h2>${T('For AI Assistants: Prohori MCP Server', 'এআই সহকারীর জন্য: প্রহরী MCP সার্ভার')}</h2>
-    <p>${T(`Any AI assistant or agent that supports the <b>Model Context Protocol (MCP)</b> can connect to Prohori and use its data directly,
-      with sources. All tools are read-only and follow the same limits as this website.`,
-      `<b>মডেল কনটেক্সট প্রোটোকল (MCP)</b> সমর্থন করে এমন যেকোনো এআই সহকারী বা এজেন্ট প্রহরীর সঙ্গে যুক্ত হয়ে সরাসরি তথ্য ব্যবহার করতে পারে, উৎসসহ।
-      সব টুল শুধু পড়ার জন্য এবং এই ওয়েবসাইটের মতো একই সীমা মেনে চলে।`)}</p>
-    ${facts([[T('Server address', 'সার্ভারের ঠিকানা'), `<code>${esc(endpoint)}</code>`], [T('Type', 'ধরন'), 'Streamable HTTP']])}
-    <table><tr><th>${T('Tool', 'টুল')}</th><th>${T('What it does', 'কী করে')}</th></tr>
-      ${MCP_TOOLS.map(([n, en, bn]) => `<tr><td><code>${n}</code></td><td>${esc(T(en, bn))}</td></tr>`).join('')}</table>
-    <p class="muted">${T('Example setting for an MCP client:', 'MCP ক্লায়েন্টের জন্য উদাহরণ সেটিং:')}</p>
-    <pre class="code">${esc(JSON.stringify({ mcpServers: { prohori: { type: 'http', url: endpoint } } }, null, 2))}</pre>
-    <p class="notice">${T('Every answer from the tools carries the same notice as this website: patterns and scores are signals for human review, not proof of wrongdoing.',
-      'টুলের প্রতিটি উত্তরে এই ওয়েবসাইটের মতো একই নোটিশ থাকে: সংকেত ও স্কোর মানুষের যাচাইয়ের জন্য, অন্যায়ের প্রমাণ নয়।')}</p>`;
+    <h2>${T('For AI Assistants', 'এআই সহকারীর জন্য')}</h2>
+    <p><a href="#/mcp">${T('Prohori MCP server: connect an AI assistant to this data', 'প্রহরী MCP সার্ভার: এই তথ্যের সঙ্গে এআই সহকারী যুক্ত করুন')} ${ICON.more}</a></p>`;
+}
+
+// ---------- MCP server page (#/mcp): one address, live status, tool list, a live test ----------
+const MCP_URL = () => (/localhost|127\.0\.0\.1/.test(location.host) ? `${location.origin}/mcp` : 'https://prohori.safeshare.co/mcp');
+let MCP_RPC_ID = 0;
+async function mcpCall(method, params = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const r = await fetch('/mcp', { method: 'POST', signal: ctrl.signal, headers: {
+      'Content-Type': 'application/json', Accept: 'application/json, text/event-stream', 'MCP-Protocol-Version': '2025-11-25' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: ++MCP_RPC_ID, method, params }) });
+    if (!r.ok) throw new Error(`${r.status}`);
+    const j = await r.json();
+    if (j.error) throw new Error(j.error.message);
+    return j.result;
+  } finally { clearTimeout(timer); }
+}
+async function copyText(text, btn) {
+  try { await navigator.clipboard.writeText(text); } catch (e) {
+    const ta = Object.assign(document.createElement('textarea'), { value: text });
+    document.body.append(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e2) { /* ignore */ }
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = T('Copied', 'কপি হয়েছে');
+  setTimeout(() => { btn.textContent = old; }, 1500);
+}
+const DOT = c => `<svg class="ic" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.2" fill="${c}"/></svg>`;
+
+async function mcpPage() {
+  const url = MCP_URL();
+  view.innerHTML = `
+    <h1>${T('MCP Server for AI Assistants', 'এআই সহকারীর জন্য MCP সার্ভার')}</h1>
+    <p>${T("Add this address as a remote MCP server in any AI assistant. It can then search Prohori's records, the ban list and the procurement law, with sources.",
+      'যেকোনো এআই সহকারীর সেটিংসে এই ঠিকানাটি রিমোট MCP সার্ভার হিসেবে যোগ করুন। তখন সহকারী প্রহরীর তথ্য, নিষিদ্ধ তালিকা ও ক্রয় আইনে খুঁজতে পারবে, উৎসসহ।')}</p>
+    ${facts([
+      [T('Server address', 'সার্ভারের ঠিকানা'), `<span class="mcp-url">${esc(url)}</span> <button type="button" class="btn-line mcp-copy" id="mcpCopy">${T('Copy', 'কপি')}</button>`],
+      [T('Status', 'অবস্থা'), `<span id="mcpStatus">${T('Checking', 'যাচাই হচ্ছে')}</span>`],
+      [T('Connection', 'সংযোগ'), T('Streamable HTTP · no login needed', 'Streamable HTTP · লগইন লাগে না')],
+      [T('Access', 'অনুমতি'), T('Read-only', 'শুধু পড়া')],
+    ])}
+    <h2>${T('Tools', 'টুল')}</h2>
+    <table id="mcpTools"><tr><th>${T('Tool', 'টুল')}</th><th>${T('What it does', 'কী করে')}</th></tr>
+      ${MCP_TOOLS.map(([n, en, bn]) => `<tr data-tool="${n}"><td class="mcp-tool">${n}</td><td>${esc(T(en, bn))}</td></tr>`).join('')}</table>
+    <h2>${T('Test the Server', 'সার্ভার পরীক্ষা করুন')}</h2>
+    <form class="mcp-test" id="mcpForm">
+      <label for="mcpQ">${T('Company or office name', 'প্রতিষ্ঠান বা অফিসের নাম')}</label>
+      <input id="mcpQ" value="Engineers House" maxlength="80" autocomplete="off">
+      <button type="submit" class="btn-main">${T('Search', 'খুঁজুন')}</button>
+    </form>
+    <div id="mcpOut" aria-live="polite"></div>
+    <p class="muted">${T('Every answer from the server includes its source and the notice that patterns and scores are for review, not proof.',
+      'সার্ভারের প্রতিটি উত্তরে উৎস এবং এই নোটিশ থাকে: সংকেত ও স্কোর যাচাইয়ের জন্য, প্রমাণ নয়।')}</p>`;
+
+  document.getElementById('mcpCopy').addEventListener('click', e => copyText(url, e.currentTarget));
+  const status = document.getElementById('mcpStatus');
+  mcpCall('tools/list').then(r => {
+    if (!document.body.contains(status)) return;
+    const live = new Set(r.tools.map(t => t.name));
+    status.innerHTML = `${DOT('#2e9b3a')} ${T(`Online · ${num(r.tools.length)} tools`, `চালু · ${num(r.tools.length)}টি টুল`)}`;
+    document.querySelectorAll('#mcpTools tr[data-tool]').forEach(tr => { if (!live.has(tr.dataset.tool)) tr.classList.add('muted'); });
+  }).catch(() => {
+    if (document.body.contains(status)) status.innerHTML = `${DOT('#d62828')} ${T('Not reachable right now', 'এই মুহূর্তে পাওয়া যাচ্ছে না')}`;
+  });
+
+  document.getElementById('mcpForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const q = document.getElementById('mcpQ').value.trim();
+    const out = document.getElementById('mcpOut');
+    if (q.length < 2) { out.innerHTML = `<p class="muted">${T('Type at least 2 letters.', 'অন্তত ২টি অক্ষর লিখুন।')}</p>`; return; }
+    out.innerHTML = `<p class="muted">${T('Asking the server…', 'সার্ভারে জিজ্ঞেস করা হচ্ছে…')}</p>`;
+    const t0 = performance.now();
+    try {
+      const r = await mcpCall('tools/call', { name: 'search_firms_and_offices', arguments: { query: q } });
+      const data = r.structuredContent || JSON.parse(((r.content || [])[0] || {}).text || '{}');
+      const ms = Math.round(performance.now() - t0);
+      const rows = (data.companies || []).slice(0, 8);
+      out.innerHTML = rows.length ? `
+        <table><tr><th>${T('Company', 'প্রতিষ্ঠান')}</th><th class="num">${T('Contracts', 'চুক্তি')}</th><th class="num">${T('Value', 'মূল্য')}</th></tr>
+          ${rows.map(c => `<tr><td>${companyLink(c.key, c.name)}${debTag(c.n_debarments)}</td><td class="num">${num(c.n_contracts)}</td><td class="num">${taka(c.value_bdt)}</td></tr>`).join('')}</table>
+        <p class="muted">${T(`Answered by the MCP tool search_firms_and_offices in ${ms} ms.`, `MCP টুল search_firms_and_offices ${dig(ms)} মিলিসেকেন্ডে উত্তর দিয়েছে।`)}</p>`
+        : `<p class="muted">${T('Nothing found with that name.', 'এই নামে কিছু পাওয়া যায়নি।')}</p>`;
+      labelTables();
+    } catch (err) {
+      out.innerHTML = `<p class="muted">${T('The server did not answer. Please try again.', 'সার্ভার উত্তর দেয়নি। আবার চেষ্টা করুন।')}</p>`;
+    }
+  });
 }
 
 // ---------- Investigator agent: "Make a brief on this firm" (#/brief/<key>) ----------
@@ -1524,11 +1603,12 @@ async function route() {
     else if (page === 'brief') await briefPage(arg);
     else if (page === 'global') await globalPage();
     else if (page === 'opendata') await openDataPage();
+    else if (page === 'mcp') await mcpPage();
     else if (page === 'numbers') await numbers();
     else await home();
     labelTables();
     // Tell the AI assistant what is on screen: a company, an office, or one of the list pages.
-    const PAGES = ['search', 'patterns', 'debarred', 'largest', 'watchlist', 'model', 'about', 'pricing', 'probashi', 'check', 'districts', 'global', 'opendata'];
+    const PAGES = ['search', 'patterns', 'debarred', 'largest', 'watchlist', 'model', 'about', 'pricing', 'probashi', 'check', 'districts', 'global', 'opendata', 'mcp'];
     const KEYED = ['company', 'office', 'district', 'report', 'brief'];
     const ctx = KEYED.includes(page) ? page : PAGES.includes(page) ? page : 'home';
     const h1 = view.querySelector('h1');

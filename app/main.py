@@ -71,6 +71,24 @@ async def revalidate_static(request, call_next):
     return response
 
 
+# A person who opens /mcp in a browser is sent to the MCP page inside the site (#/mcp).
+
+
+@app.middleware("http")
+async def mcp_browser_page(request, call_next):
+    """A person who opens /mcp in a browser is sent to the site's MCP page. Any other GET (an MCP client asking for a
+    standing event stream) or DELETE gets 405: this server is stateless and never sends messages on its own, so the
+    MCP spec allows 405 here, and no connection is left open. POST requests go to the MCP server."""
+    if request.url.path in ("/mcp", "/mcp/") and request.method in ("GET", "DELETE"):
+        from fastapi.responses import JSONResponse
+        if request.method == "GET" and "text/html" in request.headers.get("accept", ""):
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse("/#/mcp", status_code=302)     # the MCP page inside the site
+        return JSONResponse({"error": "Method not allowed: send MCP messages with POST."}, status_code=405,
+                            headers={"Allow": "POST"})
+    return await call_next(request)
+
+
 def query(sql: str, params=None) -> list[dict]:
     cur = _db.cursor()
     cur.register("dmap", DMAP)

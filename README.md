@@ -241,6 +241,8 @@ with sources: **`https://prohori.safeshare.co/mcp`** (Streamable HTTP, stateless
 - Built with the official MCP Python SDK (`app/mcp_server.py`) inside the same FastAPI app, so it reads the same data
   and follows the same limits. All tools are read-only. Every answer carries Prohori's notice that patterns and scores
   are signals for human review, not proof.
+- Opening the address in a browser leads to the site's MCP page: the address with a copy button, live server status,
+  the tool list, and a search box that runs a real tool call on the server.
 - Requests whose host name is not Prohori's are refused (protection against DNS rebinding).
 - Tested with the official MCP client: all ten tools answer, and an unknown company gets a clear "search first" message.
 
