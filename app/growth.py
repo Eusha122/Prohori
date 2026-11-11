@@ -19,7 +19,7 @@ DB_PATH = ROOT / "data" / "growth.sqlite"
 
 PLANS = {"pro", "lender", "institution", "digest", "alerts", "notify"}
 ROLES = {"contractor", "bank", "journalist", "nrb", "citizen", "student", "government", "ngo", "other"}
-EVENTS = {"view", "search", "chat", "report", "signup_open"}
+EVENTS = {"view", "search", "chat", "report", "brief", "signup_open"}
 EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}\.[A-Za-z]{2,}$")
 PHONE = re.compile(r"^\+?[0-9 \-]{8,16}$")
 
@@ -102,7 +102,7 @@ class Growth:
         return {
             "since": first, "visitors": vis[0], "visitors_abroad": vis[1],
             "page_views": tot("view"), "searches": tot("search"), "chat_questions": tot("chat"),
-            "reports_opened": tot("report"), "signups": sum(by_plan.values()), "signups_by_plan": by_plan,
+            "reports_opened": tot("report"), "briefs_opened": tot("brief"), "signups": sum(by_plan.values()), "signups_by_plan": by_plan,
             "signups_by_role": by_role, "signups_abroad": abroad_signups, "pro_price_test": price,
             "pro_form_opens": opens, "daily_visitors": [{"day": d, "visitors": n} for d, n in reversed(days)],
         }

@@ -8,11 +8,15 @@ prohori.safeshare.co {
 		X-Frame-Options "SAMEORIGIN"
 		-Server
 	}
-	reverse_proxy 127.0.0.1:8000
+	reverse_proxy 127.0.0.1:8000 {
+		flush_interval -1   # send the investigator agent's live steps at once
+	}
 }
 
 # Plain IP address (before the domain points here): serve the site over HTTP.
 :80 {
 	encode zstd gzip
-	reverse_proxy 127.0.0.1:8000
+	reverse_proxy 127.0.0.1:8000 {
+		flush_interval -1   # send the investigator agent's live steps at once
+	}
 }

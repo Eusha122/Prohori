@@ -16,8 +16,12 @@ from pydantic import BaseModel
 
 import pandas as pd
 
+from fastapi.responses import StreamingResponse
+
+from app.agent import Investigator
 from app.ai import PAGE_ABOUT, AIUnavailable, NovaAssistant, fact_sheet, office_sheet, page_sheet
 from app.growth import Growth
+from app.law import LawIndex
 from app.risk import RiskIndex, fmt
 from pipeline.geo import canonical_district, division_of
 
@@ -305,7 +309,7 @@ def ai_context(ctx: str, key: str):
             r = company(key)
             return fact_sheet(r, RISK.metrics), r["company"]["name"]
         return "company", f"company:{key}", facts
-    if ctx == "report":
+    if ctx in ("report", "brief"):
         return ai_context("company", key)
     if ctx == "office":
         return "office", f"office:{key}", lambda: (office_sheet(office(key)), key)
@@ -421,6 +425,61 @@ def contractor_report(key: str):
         GROUP BY 1 ORDER BY 2 DESC LIMIT 5""", [key])
     r["data_through"] = query("SELECT max(signed_date) AS d FROM contracts")[0]["d"]
     return r
+
+
+LAW = LawIndex(client_factory=AI.client)
+
+
+class AgentData:
+    """What the investigator agent's tools may read: the same data the public pages show, plus the law."""
+    law = LAW
+    query = staticmethod(query)
+    company = staticmethod(company)
+    office = staticmethod(office)
+    _ban_names = None
+
+    @staticmethod
+    def metrics():
+        return RISK.metrics
+
+    @classmethod
+    def ban_names(cls):
+        if cls._ban_names is None:
+            cls._ban_names = [r["n"] for r in query("SELECT DISTINCT lower(company) AS n FROM debarments")]
+        return cls._ban_names
+
+
+INVESTIGATOR = Investigator(AI, AgentData)
+
+
+@app.get("/api/law")
+def law_search(q: str = Query(min_length=3, max_length=200)):
+    """Search the procurement law (Rules 2025, Act 2006 and amendments); each result links to the official PDF page."""
+    return LAW.search(q, k=5)
+
+
+@app.get("/api/brief")
+def brief(request: Request, key: str, lang: str = "en"):
+    """Investigator agent: streams each tool call as it happens, then the finished, checked brief (server-sent events)."""
+    if not query("SELECT 1 AS x FROM company_summary WHERE winner_key = ?", [key]):
+        raise HTTPException(404, "company not found")
+    status = ROOT / "data" / "last_update.json"
+    data_date = json.loads(status.read_text(encoding="utf8"))["updated"][:10] if status.exists() else "local"
+    ip = client_ip(request)
+
+    def events():
+        try:
+            for ev in INVESTIGATOR.stream(key, lang, ip, data_date):
+                yield f"data: {json.dumps(ev, ensure_ascii=False, default=str)}\n\n"
+        except AIUnavailable as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+        except Exception:
+            import traceback
+            traceback.print_exc()           # goes to the server log
+            yield f"data: {json.dumps({'type': 'error', 'message': 'The investigator stopped because of an error. Please try again.'})}\n\n"
+
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 class Signup(BaseModel):

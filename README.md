@@ -33,6 +33,8 @@ AI assistant that only uses facts from the page.
 | **AI early-warning model** (logistic regression + monotone gradient boosting) with a time-split backtest against later debarments | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | AI watchlist (overall and "unusual for its size", by division), plain-language reasons for every score, public "How accurate is the AI?" page | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | **Prohori AI assistant** on every page (Amazon Nova 2 Lite on Bedrock): explains the page in simple Bangla or English, answers follow-up questions, refuses to accuse anyone | <img src="docs/icons/done.svg" width="18" alt="Done"> |
+| **Investigator agent**: one button, "Make a brief on this firm". The AI calls real tools (contract records, office records, the government ban list, the risk score, a search of the procurement law) and writes a one-page brief in which every fact cites a numbered source; the server then checks every number, every citation and the wording | <img src="docs/icons/done.svg" width="18" alt="Done"> |
+| **Law search (RAG)** over the Public Procurement Rules 2025, the Public Procurement Act 2006 and its 2025 / 2026 amendments (324 pages of official BPPA PDFs), by keyword and by meaning; every result links to the official PDF page | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | Full English / বাংলা switch for the whole site, phone-friendly layout | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | District pages for all 64 districts, a section for Bangladeshis living abroad, printable Contractor Check Report | <img src="docs/icons/done.svg" width="18" alt="Done"> |
 | **Live on AWS** with HTTPS and a nightly data update from e-GP | <img src="docs/icons/done.svg" width="18" alt="Done"> |
@@ -57,6 +59,11 @@ flowchart LR
     I -->|"answer in Bangla or English"| H
     H --> J["Web: search, company, office,<br/>watchlist, districts, AI chat"]
     K["Nightly update 03:00 BST"] -->|"newest awards + debarments"| C
+    L["Official law PDFs<br/>BPPA"] -->|"build_law_index.py<br/>Nova reads pages, summaries,<br/>Nova embeddings"| M[("Law index<br/>app/law/")]
+    M --> N["Investigator agent<br/>app/agent.py<br/>Nova 2 Lite + 8 tools"]
+    C --> N
+    G --> N
+    N -->|"checked brief with sources"| J
 ```
 
 **Input → processing → output**
@@ -70,7 +77,7 @@ flowchart LR
 3. **Output.** A review priority for each active firm (top 1% Very high, top 5% High, top 15% Elevated), the
    three main reasons in plain words, its rank among firms of a similar size, and an AI explanation on request.
 
-## The AI, in three parts
+## The AI, in four parts
 
 ### 1. Risk model: who should be reviewed first
 
@@ -105,6 +112,62 @@ strongest single signal, so the app always shows whether a firm stands out for r
 | ![AI refuses to accuse and lists the facts](docs/screenshots/ai-safety-answer.png) | ![AI explains a company page in Bangla](docs/screenshots/ai-bangla-explain.png) |
 
 *Example firm: one already debarred by the government (LGED, 2024).*
+
+### 4. Investigator agent: a one-page brief with sources
+
+On any company page, **"Make a brief on this firm"** starts an agent. Amazon Nova 2 Lite runs a tool-calling loop
+and decides by itself which tool to use next and with what input. A typical brief takes 6 to 10 tool calls and
+about 15 seconds.
+
+| Tool | What it reads |
+|---|---|
+| `company_profile` | The firm's contracts from e-GP award notices: totals, years, buying methods, ministries, rule-based patterns |
+| `offices_it_wins_from` | The offices that give the firm the most work, and the firm's share of each office's contracts |
+| `office_profile` | One office's record and who else wins there (the agent picks the office) |
+| `recent_contracts` | Recent contracts, each linked to its official e-GP award notice |
+| `check_ban_list` | The government's e-GP debarment list, plus similar names that may be different firms |
+| `ai_risk_score` | Prohori's review priority, its reasons, and the model's test results |
+| `bidding_facts` | Tenders received, single-tender contracts, late signing (facts only) |
+| `search_law` | The procurement law (see below); the agent writes the search question itself |
+
+**What the reader sees.** Each tool call appears on screen as it happens, with its input and a one-line result. The
+brief has fixed sections (summary, contract record, where the work comes from, official ban record, AI review
+priority, relevant rules, what a reviewer could check next). Every fact carries a citation such as [S3] that opens
+the source: an official e-GP notice, the e-GP ban list, a Prohori record, or a page of the official law PDF.
+
+**Checks the server makes before showing a brief** (shown at the end of every brief):
+
+- **Numbers:** every number of two or more digits in the brief is looked up in the tool results (Bangla digits
+  included). Any number not found is listed for the reader. In testing on several firms, all numbers were found.
+- **Citations:** a citation that points to no real source is removed.
+- **Wording:** accusing words (corrupt, fraud, guilty, collusion, and their Bangla forms) are not allowed outside the
+  quoted official record. The agent is asked to rewrite once; any sentence that still has them is removed.
+- **Official record kept exact:** the reason for a ban is quoted word for word from the e-GP list, never softened
+  or translated.
+- **Required steps:** the agent must check the ban list, the risk score and the law before writing.
+- Briefs are saved per firm, language and data date, and limited per visitor, to control cost.
+
+![The agent's steps, shown live](docs/screenshots/investigator-steps.png)
+
+| Brief in English | Brief in Bangla |
+|---|---|
+| ![Investigator brief in English](docs/screenshots/investigator-brief.png) | ![Investigator brief in Bangla](docs/screenshots/investigator-brief-bn.png) |
+
+### Law search (retrieval-augmented generation)
+
+- **Source:** the official PDFs on the BPPA website: Public Procurement Rules 2025, Public Procurement Act 2006,
+  the 2025 amendment ordinance and the 2026 amendment act (324 pages).
+- **Reading the PDFs:** the Bangla gazette PDFs use old font encodings, so their text cannot be copied out. Each
+  page is read as an image by Nova 2 Lite.
+- **Rule numbers we can trust:** machine reading often confuses Bangla digits (for example ৪ and ৮). Rule numbers
+  always go up in order, so `pipeline/build_law_index.py` keeps the longest chain of headings whose numbers go up
+  (trying the usual mix-ups). A page is labelled with a rule or section number only when that chain confirms it;
+  otherwise it is labelled by its PDF page only.
+- **Search:** each page has an English title, summary and keywords. A question is matched by keywords (BM25) and by
+  meaning (Amazon Nova multimodal embeddings), and the two rankings are merged. Every result links to its page in
+  the official PDF, which is the authority.
+- **Limits:** summaries never repeat amounts, days or percentages from the machine reading, because digits may be
+  misread. The brief says what a rule covers, never whether a firm followed it.
 
 ## How well the AI works (tested on data it never saw)
 
@@ -170,13 +233,15 @@ files, `Caddyfile`, and `push_code.sh` (send code updates).
 ```
 collector/   Node + Playwright collectors for e-GP public pages (resumable, rate-limited)
 pipeline/    Python: build the DuckDB database, match debarred firms, build features, train and test the model,
-             nightly update
+             nightly update, build the law index (build_law_index.py)
 app/         FastAPI JSON API (main.py), risk scores and reasons (risk.py), AI assistant (ai.py),
-             waitlist and privacy-friendly counter (growth.py), static front end (HTML/CSS/JS, no build step)
+             investigator agent (agent.py), law search (law.py + law/ index), waitlist and privacy-friendly
+             counter (growth.py), static front end (HTML/CSS/JS, no build step)
 models/      Trained model files and test results (metrics.json)
 deploy/      AWS setup, server services, nightly update timer
 brand/       Logo sources (SVG) and rendered PNGs
 docs/        Screenshots and icons
+tests/       Tests for the agent's checks and the law index (python -m pytest tests)
 data/        Raw and processed data, not committed (see data/README.md)
 ```
 
@@ -205,12 +270,18 @@ python pipeline/match_debarred.py
 python pipeline/build_features.py
 python pipeline/train_model.py     # trains the model, runs the backtest, scores every active firm
 
+# Optional: rebuild the law index in app/law/ (already included; needs AWS access, about 30 minutes)
+pip install pymupdf
+python pipeline/build_law_index.py all
+
 # 4. Start the app, then open http://localhost:8000
 python -m uvicorn app.main:app --port 8000
 #   Windows shortcut: START_APP.bat
 ```
 
 Stop the app before re-running the pipeline (the pipeline needs write access to `data/prohori.duckdb`).
+
+Tests: `pip install pytest`, then `python -m pytest tests`.
 
 ### Settings (`.env` in the project folder, never committed)
 
@@ -222,7 +293,8 @@ Stop the app before re-running the pipeline (the pipeline needs write access to 
 | `AI_PER_IP_PER_HOUR`, `AI_GLOBAL_PER_DAY` | New AI answers allowed per visitor per hour and in total per day | `30`, `1500` |
 | `PROHORI_ADMIN_KEY` | Password for the team-only usage page | none |
 
-The site works without AWS settings; only the AI assistant is turned off.
+The site works without AWS settings; only the AI assistant and the investigator agent are turned off. Law search
+then falls back to keyword search.
 
 ## API
 
@@ -238,11 +310,14 @@ The site works without AWS settings; only the AI assistant is turned off.
 | `GET /api/districts`, `/api/district?name=` | District summaries |
 | `GET /api/report?key=` | Data for the printable Contractor Check Report |
 | `GET /api/explain`, `POST /api/ask` | AI assistant: explain the current page, answer a question |
+| `GET /api/brief?key=&lang=en\|bn` | Investigator agent: each tool call as it happens, then the checked brief (server-sent events) |
+| `GET /api/law?q=` | Law search: the most relevant pages of the procurement law, with links to the official PDF |
 
 ## Tech
 
 Python · DuckDB · pandas · RapidFuzz · scikit-learn · LightGBM · FastAPI · Uvicorn · Node.js · Playwright ·
-plain HTML/CSS/JS · Amazon Bedrock (Nova 2 Lite) · Amazon EC2 · IAM · Caddy · systemd.
+plain HTML/CSS/JS · Amazon Bedrock (Nova 2 Lite with tool use, Nova multimodal embeddings) · PyMuPDF ·
+Amazon EC2 · IAM · Caddy · systemd.
 
 ## Contributing
 

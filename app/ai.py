@@ -274,16 +274,21 @@ class NovaAssistant:
             self._day = (day, n + 1)
 
     # ---------- model call ----------
-    def _call(self, facts, task, name=None, max_tokens=700, history=()):
+    def client(self):
+        """The Bedrock connection, shared by the chat, the investigator agent and law search."""
         if self._client is None:
             try:
                 import boto3
                 from botocore.config import Config
                 # Fail fast instead of hanging if Bedrock is slow; one automatic retry.
-                cfg = Config(connect_timeout=5, read_timeout=30, retries={"max_attempts": 2, "mode": "standard"})
+                cfg = Config(connect_timeout=5, read_timeout=60, retries={"max_attempts": 2, "mode": "standard"})
                 self._client = boto3.client("bedrock-runtime", region_name=REGION, config=cfg)
             except Exception as e:  # missing library or keys
                 raise AIUnavailable("The AI is not set up on this server.") from e
+        return self._client
+
+    def _call(self, facts, task, name=None, max_tokens=700, history=()):
+        self.client()
         if name:
             task += f'\nWrite the name exactly as "{name}", in English letters, every time.'
         try:

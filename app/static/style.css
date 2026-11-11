@@ -301,6 +301,45 @@ table.plans td:first-child { white-space: nowrap; }
 .report-head .muted { text-align: right; font-size: 12.5px; }
 .report-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
 .report h3 { font-size: 14px; margin: 12px 0 4px; }
+
+/* ---------- Investigator brief (#/brief/<key>) ---------- */
+.brief .notice { margin: 8px 0 12px; }
+.brief .notice.bad { background: #fdecec; border-left-color: var(--red); }
+.bsteps { list-style: none; padding: 0; margin: 6px 0 16px; border: 1px solid var(--line); background: #fbfdf9; }
+.bsteps li { display: grid; grid-template-columns: 20px 1fr; align-items: baseline; column-gap: 8px; row-gap: 2px;
+  padding: 7px 10px; border-bottom: 1px dotted var(--line); font-size: 14px; }
+.bsteps li:last-child { border-bottom: 0; }
+.bsteps .st { width: 16px; height: 16px; align-self: center; }
+.bsteps .res { grid-column: 2; color: var(--muted); font-size: 13px; }
+.bsteps li.running b { color: var(--muted); }
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+#bbody p, #bbody li { line-height: 1.6; }
+.blist { margin: 4px 0 10px; padding-left: 22px; }
+.blist li.subli { margin-left: 20px; list-style: circle; }
+.cite { border: 0; background: none; padding: 0 1px; font: inherit; font-size: 12px; color: var(--green); cursor: pointer;
+  vertical-align: baseline; }
+.cite:hover { text-decoration: underline; }
+.sources { padding-left: 0; list-style: none; font-size: 13.5px; }
+.sources li { padding: 6px 8px; border-bottom: 1px dotted var(--line); overflow-wrap: anywhere; transition: background .3s; }
+.sources li.flash { background: #fff3c4; }
+.sources .kind { display: inline-block; font-size: 11.5px; color: #2a5f16; background: var(--green-pale); border: 1px solid var(--line);
+  border-radius: 9px; padding: 0 7px; margin-right: 4px; }
+.sources a { font-size: 12.5px; }
+.pdf-page { width: 718px; padding: 0; background: #fff; }   /* A4 width minus 10 mm margins, at 96 px per inch */
+.pdf-page .report { max-width: none; }
+.pdf-page .cite { color: var(--green); }
+.pdf-foot { margin-top: 14px; font-size: 11.5px; }
+@media (max-width: 760px) {
+  .bsteps li { grid-template-columns: 20px 1fr; }
+}
+@media print {
+  .bsteps { font-size: 11px; }
+  .bsteps li { padding: 3px 6px; }
+  .cite { color: inherit; }
+  .brief h2 { break-after: avoid; }
+}
 @media print {
   .strip, .head, .searchbar, .gonav, .ticker, .side, .foot, .aifab, .aipanel, .report-actions, .modal { display: none !important; }
   .layout { display: block; }

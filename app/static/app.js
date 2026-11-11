@@ -1,6 +1,6 @@
 // Prohori front end. Routes: #/  #/search/<q>  #/company/<key>  #/office/<name>  #/patterns  #/debarred  #/largest
 //   #/watchlist[/<overall|size>/<division>]  #/model  #/about  #/pricing  #/probashi  #/districts  #/district/<name>
-//   #/check[/<q>]  #/report/<key>  #/numbers (team only)
+//   #/check[/<q>]  #/report/<key>  #/brief/<key> (investigator agent)  #/numbers (team only)
 // Every visible text has an English and a Bangla version: T('English', 'বাংলা'). The language button in the top-right
 // corner switches all of it, including numbers, Taka amounts and dates, and is remembered in the browser.
 const view = document.getElementById('view');
@@ -484,7 +484,8 @@ async function company(key) {
       [T('Offices / districts', 'অফিস / জেলা'), T(`${c.n_offices} offices in ${c.n_districts} districts`, `${num(c.n_districts)}টি জেলায় ${num(c.n_offices)}টি অফিস`)],
       [T('Active period', 'কাজের সময়কাল'), `${date(c.first_contract)} – ${date(c.last_contract)}`],
     ])}
-    <p class="actions"><a class="btn-line" href="#/report/${encodeURIComponent(key)}">${T('Contractor Check Report (for banks)', 'ঠিকাদার যাচাই রিপোর্ট (ব্যাংকের জন্য)')}</a>
+    <p class="actions"><a class="btn-main" href="#/brief/${encodeURIComponent(key)}">${T('Make a brief on this firm', 'এই প্রতিষ্ঠানের ওপর ব্রিফ তৈরি করুন')}</a>
+      <a class="btn-line" href="#/report/${encodeURIComponent(key)}">${T('Contractor Check Report (for banks)', 'ঠিকাদার যাচাই রিপোর্ট (ব্যাংকের জন্য)')}</a>
       ${signupBtn('notify', T('Notify me when it wins a contract', 'নতুন কাজ পেলে আমাকে জানান'), c.name)}</p>
     <h2>${T('Risk Patterns', 'ঝুঁকির সংকেত')} ${bnNote('(ঝুঁকির সংকেত)')}</h2>${flags}
     ${riskSection(r, m, c)}
@@ -1175,8 +1176,213 @@ document.getElementById('navshade').addEventListener('click', () => setMenu(fals
 document.getElementById('sidenav').addEventListener('click', e => { if (e.target.closest('a[href^="#/"]')) setMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 
+// ---------- Investigator agent: "Make a brief on this firm" (#/brief/<key>) ----------
+// The server streams each tool call the AI agent makes, then the finished brief with numbered sources and
+// the results of its checks (numbers, citations, wording).
+const STEP_ICON = {
+  done: '<svg class="ic st" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="#eaf4e0" stroke="#2c6e1c" stroke-width="1.4"/><path d="M5 8.3l2 2 4-4.4" fill="none" stroke="#2c6e1c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  run: '<svg class="ic st spin" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#c9d8bd" stroke-width="2"/><path d="M8 2a6 6 0 0 1 6 6" fill="none" stroke="#2c6e1c" stroke-width="2" stroke-linecap="round"/></svg>',
+  warn: '<svg class="ic st" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="#fff" stroke="#d62828" stroke-width="1.4"/><path d="M8 4.5v4.2" stroke="#d62828" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.3" r="1" fill="#d62828"/></svg>',
+};
+let BRIEF_ABORT = null;
+const fullUrl = u => (u.startsWith('#/') ? `${location.origin}/${u}` : u);
+
+function briefText(text, ids) {
+  const cite = s => esc(s).replace(/\[S(\d+)\]/g, (m, n) => (ids.has(`S${n}`)
+    ? `<button type="button" class="cite" data-src="S${n}" title="${T('Show source', 'উৎস দেখুন')}">[S${dig(n)}]</button>` : ''));
+  let html = '', inList = false;
+  const close = () => { if (inList) { html += '</ul>'; inList = false; } };
+  for (const line of text.split('\n')) {
+    if (!line.trim()) { close(); continue; }
+    const h = line.match(/^###\s+(.*)/);
+    if (h) { close(); html += `<h2>${cite(h[1])}</h2>`; continue; }
+    const b = line.match(/^(\s*)[-•]\s+(.*)/);
+    if (b) {
+      if (!inList) { html += '<ul class="blist">'; inList = true; }
+      html += `<li${b[1].length >= 2 ? ' class="subli"' : ''}>${cite(b[2])}</li>`;
+      continue;
+    }
+    close();
+    html += `<p>${cite(line)}</p>`;
+  }
+  close();
+  return html;
+}
+
+function briefResult(d) {
+  const ids = new Set(d.sources.map(s => s.id));
+  const c = d.check, n = c.numbers, u = c.unverified;
+  const kind = { egp: T('e-GP (government)', 'ই-জিপি (সরকারি)'), law: T('Law (official PDF)', 'আইন (সরকারি পিডিএফ)'), prohori: T('Prohori record', 'প্রহরীর রেকর্ড') };
+  return `
+    ${briefText(d.text, ids)}
+    <h2>${T('Sources', 'তথ্যসূত্র')}</h2>
+    <ol class="sources">${d.sources.map(s => `<li id="src-${s.id}"><b>${s.id}</b> <span class="kind">${kind[s.kind] || ''}</span>
+      ${esc(s.title)}<br><a href="${esc(s.url.startsWith('#/') ? s.url : s.url)}" ${s.url.startsWith('#/') ? '' : 'target="_blank" rel="noopener"'}>${esc(fullUrl(s.url))}</a></li>`).join('')}</ol>
+    <h2>${T('How This Brief Was Checked', 'এই ব্রিফ কীভাবে যাচাই করা হয়েছে')}</h2>
+    ${facts([
+      [T('Tool calls made by the agent', 'এজেন্টের টুল ব্যবহার'), num(d.steps.length)],
+      [T('Numbers checked against what the tools returned', 'টুলের ফলাফলের সঙ্গে মেলানো সংখ্যা'), u.length
+        ? `<b class="bad">${T(`${num(n - u.length)} of ${num(n)} found. Not found: ${u.map(dig).join(', ')}`, `${num(n)}টির মধ্যে ${num(n - u.length)}টি পাওয়া গেছে। পাওয়া যায়নি: ${u.map(dig).join(', ')}`)}</b>`
+        : T(`All ${num(n)} found`, `সব ${num(n)}টি পাওয়া গেছে`)],
+      [T('Law searched', 'যে আইন খোঁজা হয়েছে'), d.law_search
+        ? T('Public Procurement Rules 2025, Act 2006 and amendments (official BPPA PDFs)', 'সরকারি ক্রয় বিধিমালা ২০২৫, আইন ২০০৬ ও সংশোধনী (বিপিপিএ-র সরকারি পিডিএফ)')
+        : T('Not available on this server', 'এই সার্ভারে নেই')],
+      [T('Made', 'তৈরি'), `${esc(d.made)} · ${dig(d.seconds)} ${T('seconds', 'সেকেন্ড')}${d.cached ? T(' (saved copy)', ' (সংরক্ষিত কপি)') : ''}`],
+    ])}
+    <p class="notice">${T(`This brief was written by AI from public records. It is a starting point for a human reviewer, not an
+      accusation or a finding of wrongdoing. Check every fact in its source. Law text is machine-read from the official
+      gazette; the official PDF page is the authority. To report a mistake, see <a href="#/about">How Prohori works</a>.`,
+      `এই ব্রিফ সরকারি প্রকাশ্য নথি থেকে এআই লিখেছে। এটি যাচাইকারীর জন্য শুরুর একটি ধাপ, কোনো অভিযোগ বা অন্যায়ের সিদ্ধান্ত নয়।
+      প্রতিটি তথ্য তার উৎসে মিলিয়ে দেখুন। আইনের লেখা সরকারি গেজেট থেকে যন্ত্রে পড়া; সরকারি পিডিএফ পৃষ্ঠাই চূড়ান্ত।
+      ভুল জানাতে দেখুন <a href="#/about">প্রহরী কীভাবে কাজ করে</a>।`)}</p>`;
+}
+
+// "Download PDF": the whole brief (steps, brief, sources, checks) drawn as it looks on screen, so Bangla letters
+// come out right. The PDF library (app/static/vendor) is loaded only when the button is pressed.
+function loadPdfTool() {
+  if (window.html2pdf) return Promise.resolve(window.html2pdf);
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = '/static/vendor/html2pdf.bundle.min.js';
+    s.onload = () => res(window.html2pdf);
+    s.onerror = () => rej(new Error(T('the PDF tool did not load', 'পিডিএফ টুল লোড হয়নি')));
+    document.head.append(s);
+  });
+}
+
+async function downloadBrief(btn) {
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = T('Making the PDF…', 'পিডিএফ তৈরি হচ্ছে…');
+  try {
+    const html2pdf = await loadPdfTool();
+    const copy = view.querySelector('.brief').cloneNode(true);
+    copy.querySelector('.report-actions')?.remove();
+    copy.insertAdjacentHTML('beforeend', `<p class="muted pdf-foot">${T(
+      `Downloaded from ${location.origin}/${location.hash} on ${new Date().toLocaleString('en-GB')}.`,
+      `${location.origin}/${location.hash} থেকে ডাউনলোড, ${new Date().toLocaleString('bn-BD')}।`)}</p>`);
+    const page = document.createElement('main');        // same styles as on screen
+    page.className = 'pdf-page';
+    page.append(copy);
+    const name = (document.getElementById('bname').textContent || 'firm').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    await html2pdf().set({
+      margin: [10, 10, 12, 10],
+      filename: `Prohori-brief-${name}-${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['li', 'p', 'h2', '.report-head'] },
+    }).from(page).save();
+    trackEvent('brief', 'brief_pdf');
+  } catch (e) {
+    alert(T(`Could not make the PDF (${e.message}). You can use your browser's Print instead.`,
+      `পিডিএফ তৈরি করা যায়নি (${e.message})। ব্রাউজারের প্রিন্ট ব্যবহার করতে পারেন।`));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+
+async function briefPage(key) {
+  BRIEF_ABORT?.abort();
+  const ctrl = new AbortController();
+  BRIEF_ABORT = ctrl;
+  trackEvent('brief', 'brief');
+  view.innerHTML = `
+    <div class="report brief">
+      <div class="report-head">
+        <div><b>${T('Prohori Investigator Brief', 'প্রহরী অনুসন্ধানী ব্রিফ')}</b>
+          <span class="muted">${T('Made by an AI agent from public records, for human review', 'সরকারি প্রকাশ্য নথি থেকে এআই এজেন্টের তৈরি, মানুষের যাচাইয়ের জন্য')}</span></div>
+        <div class="muted" id="bmeta"></div>
+      </div>
+      <p class="report-actions"><button class="btn-main" id="bprint" disabled>${T('Download PDF', 'পিডিএফ ডাউনলোড করুন')}</button>
+        <a class="btn-line" href="#/company/${encodeURIComponent(key)}">${T('Back to the company page', 'প্রতিষ্ঠানের পাতায় ফিরে যান')}</a></p>
+      <h1 id="bname">${T('Preparing the brief', 'ব্রিফ তৈরি হচ্ছে')}</h1>
+      <p class="notice">${T('A starting point for human review, not an accusation. Every fact links to its source.',
+        'যাচাইয়ের জন্য শুরুর ধাপ, অভিযোগ নয়। প্রতিটি তথ্যের সঙ্গে উৎসের লিংক আছে।')}</p>
+      <h2>${T('What the Agent Did', 'এজেন্ট যা করেছে')}</h2>
+      <p class="muted">${T(`The AI (Amazon Nova 2 Lite) decides by itself what to check next. Each line is one real step on
+        Prohori's data, the government ban list or the procurement law, and what it found.`, `এআই (Amazon Nova 2 Lite) নিজেই ঠিক করে
+        এরপর কী যাচাই করবে। প্রতিটি লাইন প্রহরীর তথ্য, সরকারি নিষিদ্ধ তালিকা বা ক্রয় আইনের ওপর একটি আসল ধাপ, আর তাতে যা পাওয়া গেছে।`)}</p>
+      <ol class="bsteps" id="bsteps"></ol>
+      <div id="bbody"></div>
+    </div>`;
+  document.getElementById('bprint').addEventListener('click', e => downloadBrief(e.currentTarget));
+  view.querySelector('.brief').addEventListener('click', e => {
+    const b = e.target.closest('.cite');
+    if (!b) return;
+    const li = document.getElementById(`src-${b.dataset.src}`);
+    if (li) { li.scrollIntoView({ block: 'center', behavior: 'smooth' }); li.classList.add('flash'); setTimeout(() => li.classList.remove('flash'), 1600); }
+  });
+  const steps = document.getElementById('bsteps'), body = document.getElementById('bbody');
+  let running = null;
+  const stopRunning = () => { running?.remove(); running = null; };
+  const live = () => BRIEF_ABORT === ctrl;
+  let started;
+  const ready = new Promise(res => { started = res; });
+
+  const handle = ev => {
+    if (!live()) return;
+    if (ev.type === 'start') {
+      document.getElementById('bname').textContent = ev.name;
+      if (ev.cached) document.getElementById('bmeta').textContent = T(`Saved brief, made ${ev.made}`, `সংরক্ষিত ব্রিফ, তৈরি ${ev.made}`);
+      started();
+    } else if (ev.type === 'status') {
+      stopRunning();
+      running = document.createElement('li');
+      running.className = 'running';
+      running.innerHTML = `${STEP_ICON.run} <b>${esc(ev.label)}</b>`;
+      steps.append(running);
+    } else if (ev.type === 'step') {
+      stopRunning();
+      // Plain words only: what the step looked at (a search question or an office) and what it found.
+      const inp = ev.input || {};
+      const what = inp.query ? T(`Searched for: "${inp.query}"`, `যা খোঁজা হয়েছে: "${inp.query}"`)
+        : inp.office_name ? T(`Office: ${inp.office_name}`, `অফিস: ${inp.office_name}`) : '';
+      const li = document.createElement('li');
+      li.innerHTML = `${ev.ok ? STEP_ICON.done : STEP_ICON.warn} <b>${esc(ev.label)}</b>
+        <span class="res">${what ? `${esc(what)}<br>` : ''}${esc(ev.result)}</span>`;
+      steps.append(li);
+    } else if (ev.type === 'brief') {
+      stopRunning();
+      body.innerHTML = briefResult(ev);
+      document.getElementById('bprint').disabled = false;
+      if (!ev.cached) document.getElementById('bmeta').textContent = T(`Made ${ev.made}`, `তৈরি ${ev.made}`);
+    } else if (ev.type === 'error') {
+      stopRunning();
+      body.innerHTML = `<p class="notice bad">${STEP_ICON.warn} ${esc(ev.message)}</p>`;
+      started();
+    }
+  };
+
+  (async () => {
+    try {
+      const r = await fetch(`/api/brief?key=${encodeURIComponent(key)}&lang=${LANG}`, { signal: ctrl.signal });
+      if (!r.ok) throw new Error(r.status === 404 ? T('Company not found', 'প্রতিষ্ঠান পাওয়া যায়নি') : `${r.status}`);
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const line = buf.slice(0, i).split('\n').find(l => l.startsWith('data: '));
+          buf = buf.slice(i + 2);
+          if (line) handle(JSON.parse(line.slice(6)));
+        }
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') handle({ type: 'error', message: T(`Could not make the brief (${e.message}).`, `ব্রিফ তৈরি করা যায়নি (${e.message})।`) });
+    }
+    started();
+  })();
+  await ready;            // show the firm's name before the page is announced; the steps keep arriving
+}
+
 async function route() {
   const [, page, ...rest] = location.hash.split('/');
+  if (page !== 'brief') { BRIEF_ABORT?.abort(); BRIEF_ABORT = null; }
   const arg = decodeURIComponent(rest.join('/'));
   view.innerHTML = `<p class="muted">${T('Loading…', 'লোড হচ্ছে…')}</p>`;
   try {
@@ -1195,12 +1401,13 @@ async function route() {
     else if (page === 'check') await checkPage(arg);
     else if (page === 'district') await districtPage(arg);
     else if (page === 'report') await report(arg);
+    else if (page === 'brief') await briefPage(arg);
     else if (page === 'numbers') await numbers();
     else await home();
     labelTables();
     // Tell the AI assistant what is on screen: a company, an office, or one of the list pages.
     const PAGES = ['search', 'patterns', 'debarred', 'largest', 'watchlist', 'model', 'about', 'pricing', 'probashi', 'check', 'districts'];
-    const KEYED = ['company', 'office', 'district', 'report'];
+    const KEYED = ['company', 'office', 'district', 'report', 'brief'];
     const ctx = KEYED.includes(page) ? page : PAGES.includes(page) ? page : 'home';
     const h1 = view.querySelector('h1');
     setAIContext(ctx, KEYED.includes(ctx) ? arg : '', h1 ? h1.textContent.trim() : 'Home');
